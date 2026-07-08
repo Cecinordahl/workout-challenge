@@ -1,0 +1,88 @@
+import {
+  collection,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+  type QuerySnapshot,
+} from 'firebase/firestore'
+import { db } from '@/services/firebase/config'
+import type { DailyResult, StoredDailyResultStatus } from '@/types/dailyResult'
+
+function dailyResultDocId(challengeId: string, dayIndex: number): string {
+  return `${challengeId}_${dayIndex}`
+}
+
+function mapResults(snapshot: QuerySnapshot): DailyResult[] {
+  return snapshot.docs.map((docSnapshot) => {
+    const data = docSnapshot.data() as Omit<DailyResult, 'id'>
+    return { id: docSnapshot.id, ...data }
+  })
+}
+
+async function writeResult(
+  challengeId: string,
+  userId: string,
+  dayIndex: number,
+  date: string,
+  status: StoredDailyResultStatus,
+  pointsAwarded: number,
+): Promise<void> {
+  const ref = doc(db, 'dailyResults', dailyResultDocId(challengeId, dayIndex))
+  await setDoc(ref, {
+    challengeId,
+    userId,
+    dayIndex,
+    date,
+    status,
+    pointsAwarded,
+    completedAt: serverTimestamp(),
+  })
+}
+
+export const DailyResultService = {
+  async completeDay(
+    challengeId: string,
+    userId: string,
+    dayIndex: number,
+    date: string,
+    pointsAwarded: number,
+  ): Promise<void> {
+    await writeResult(
+      challengeId,
+      userId,
+      dayIndex,
+      date,
+      'completed',
+      pointsAwarded,
+    )
+  },
+
+  async skipDay(
+    challengeId: string,
+    userId: string,
+    dayIndex: number,
+    date: string,
+  ): Promise<void> {
+    await writeResult(challengeId, userId, dayIndex, date, 'skipped', 0)
+  },
+
+  subscribeToResults(
+    challengeId: string,
+    userId: string,
+    callback: (results: DailyResult[]) => void,
+  ): () => void {
+    const resultsQuery = query(
+      collection(db, 'dailyResults'),
+      where('challengeId', '==', challengeId),
+      where('userId', '==', userId),
+      orderBy('dayIndex', 'asc'),
+    )
+    return onSnapshot(resultsQuery, (snapshot) => {
+      callback(mapResults(snapshot))
+    })
+  },
+}

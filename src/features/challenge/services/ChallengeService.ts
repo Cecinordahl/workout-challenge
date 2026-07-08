@@ -1,11 +1,13 @@
 import {
   addDoc,
   collection,
+  doc,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
   where,
   type DocumentSnapshot,
 } from 'firebase/firestore'
@@ -65,6 +67,13 @@ export const ChallengeService = {
       cancelled: false,
     })
     return docRef.id
+  },
+
+  async completeChallenge(challengeId: string): Promise<void> {
+    await updateDoc(doc(db, 'challenges', challengeId), {
+      status: 'completed',
+      completed: true,
+    })
   },
 
   subscribeToActiveChallenge(

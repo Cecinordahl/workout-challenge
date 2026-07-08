@@ -9,5 +9,5 @@ export function RequireActiveChallenge() {
 
   if (!user || loading) return <FullScreenSpinner />
   if (!challenge) return <Navigate to="/challenge/new" replace />
-  return <Outlet />
+  return <Outlet context={{ challenge }} />
 }

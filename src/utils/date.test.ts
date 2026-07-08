@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDaysToIsoDate, todayInTimezone } from './date'
+import { addDaysToIsoDate, daysBetweenIsoDates, todayInTimezone } from './date'
 
 describe('addDaysToIsoDate', () => {
   it('adds days within the same month', () => {
@@ -20,6 +20,24 @@ describe('addDaysToIsoDate', () => {
 
   it('supports zero days (identity)', () => {
     expect(addDaysToIsoDate('2026-05-15', 0)).toBe('2026-05-15')
+  })
+})
+
+describe('daysBetweenIsoDates', () => {
+  it('returns 0 for the same date', () => {
+    expect(daysBetweenIsoDates('2026-03-01', '2026-03-01')).toBe(0)
+  })
+
+  it('returns a positive count for a later date', () => {
+    expect(daysBetweenIsoDates('2026-03-01', '2026-03-10')).toBe(9)
+  })
+
+  it('returns a negative count for an earlier date', () => {
+    expect(daysBetweenIsoDates('2026-03-10', '2026-03-01')).toBe(-9)
+  })
+
+  it('handles a span crossing a year boundary', () => {
+    expect(daysBetweenIsoDates('2025-12-30', '2026-01-02')).toBe(3)
   })
 })
 
