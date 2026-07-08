@@ -12,7 +12,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "emulators": "firebase emulators:start --only auth,firestore"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -42,6 +43,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
+    "firebase-tools": "^15.22.4",
     "globals": "^17.7.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.4",
@@ -54,6 +56,7 @@
   "allowScripts": {
     "fsevents@2.3.3": true,
     "@firebase/util@1.15.1": true,
-    "protobufjs@7.6.5": true
+    "protobufjs@7.6.5": true,
+    "re2@1.26.0": true
   }
 }
