@@ -34,6 +34,16 @@ function challengesCollection() {
   return collection(db, 'challenges')
 }
 
+function activeChallengeQuery(ownerId: string) {
+  return query(
+    challengesCollection(),
+    where('ownerId', '==', ownerId),
+    where('status', '==', 'active'),
+    orderBy('createdAt', 'desc'),
+    limit(1),
+  )
+}
+
 function mapChallenge(snapshot: DocumentSnapshot): Challenge | null {
   if (!snapshot.exists()) return null
   const data = snapshot.data() as Omit<Challenge, 'id'>
@@ -90,18 +100,17 @@ export const ChallengeService = {
       .filter((challenge): challenge is Challenge => challenge !== null)
   },
 
+  async getActiveChallenge(ownerId: string): Promise<Challenge | null> {
+    const snapshot = await getDocs(activeChallengeQuery(ownerId))
+    const [first] = snapshot.docs
+    return first ? mapChallenge(first) : null
+  },
+
   subscribeToActiveChallenge(
     ownerId: string,
     callback: (challenge: Challenge | null) => void,
   ): () => void {
-    const activeChallengeQuery = query(
-      challengesCollection(),
-      where('ownerId', '==', ownerId),
-      where('status', '==', 'active'),
-      orderBy('createdAt', 'desc'),
-      limit(1),
-    )
-    return onSnapshot(activeChallengeQuery, (snapshot) => {
+    return onSnapshot(activeChallengeQuery(ownerId), (snapshot) => {
       const [first] = snapshot.docs
       callback(first ? mapChallenge(first) : null)
     })

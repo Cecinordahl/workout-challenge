@@ -10,6 +10,9 @@ import { RequireActiveChallenge } from '@/features/challenge/components/RequireA
 import { RedirectIfActiveChallenge } from '@/features/challenge/components/RedirectIfActiveChallenge'
 import { DashboardPage } from '@/features/dashboard/components/DashboardPage'
 import { HistoryPage } from '@/features/history/components/HistoryPage'
+import { TeamsPage } from '@/features/teams/components/TeamsPage'
+import { TeamDetailPage } from '@/features/teams/components/TeamDetailPage'
+import { JoinTeamPage } from '@/features/teams/components/JoinTeamPage'
 
 export const router = createBrowserRouter([
   {
@@ -41,6 +44,9 @@ export const router = createBrowserRouter([
             children: [{ path: '/', element: <DashboardPage /> }],
           },
           { path: '/history', element: <HistoryPage /> },
+          { path: '/teams', element: <TeamsPage /> },
+          { path: '/teams/:teamId', element: <TeamDetailPage /> },
+          { path: '/invite/:code', element: <JoinTeamPage /> },
         ],
       },
     ],

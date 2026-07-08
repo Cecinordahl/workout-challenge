@@ -19,5 +19,48 @@ service cloud.firestore {
       allow write: if request.auth != null
         && request.auth.uid == request.resource.data.userId;
     }
+
+    match /teams/{teamId} {
+      // Any authenticated user can read a team's basic info (name) given its
+      // ID — required so the join flow can show "Join {name}?" before the
+      // requester becomes a member. Team IDs are random Firestore auto-IDs,
+      // not enumerable, so this only matters to someone who already has a
+      // valid invite link or is already a member; the leaderboard itself
+      // (teamMembers) stays properly membership-gated.
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerId;
+    }
+
+    // Read access allows either "this is my own row" (provable directly from
+    // queries filtered by userId, e.g. "my teams") or "you're also a member
+    // of this same team" (provable from queries filtered by teamId, e.g. a
+    // team's leaderboard) — checked via the requester's own membership doc.
+    // This is deliberately the only cross-user read in the schema, and only
+    // exposes the denormalized progress snapshot on this collection, never
+    // the member's private challenges/dailyResults directly.
+    match /teamMembers/{memberId} {
+      // `resource == null` (the doc doesn't exist, e.g. checking whether
+      // you've already joined) must be checked first — Firestore rules
+      // throw rather than short-circuit if `resource.data` is dereferenced
+      // on a null resource, which would otherwise break "does my own
+      // prospective membership doc exist yet" lookups during join.
+      allow read: if request.auth != null
+        && (resource == null
+          || request.auth.uid == resource.data.userId
+          || exists(/databases/$(database)/documents/teamMembers/$(resource.data.teamId + '_' + request.auth.uid)));
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+    }
+
+    match /teamInvites/{code} {
+      // Any authenticated user can resolve an invite code — that's the
+      // point of a shareable link — but only its creator can create it.
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.createdBy;
+    }
   }
 }

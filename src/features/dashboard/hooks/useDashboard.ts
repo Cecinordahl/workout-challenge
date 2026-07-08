@@ -3,12 +3,12 @@ import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '@/features/authentication/hooks/useAuth'
 import { useDailyResults } from '@/features/challenge/hooks/useDailyResults'
 import { ChallengeViewService } from '@/features/challenge/services/ChallengeViewService'
+import { ChallengeProgressService } from '@/features/challenge/services/ChallengeProgressService'
 import { ChallengeService } from '@/features/challenge/services/ChallengeService'
 import { DailyResultService } from '@/features/challenge/services/DailyResultService'
 import { PointsService } from '@/features/challenge/services/PointsService'
-import { StreakService } from '@/features/challenge/services/StreakService'
+import { TeamService } from '@/features/teams/services/TeamService'
 import type { Challenge } from '@/types/challenge'
-import type { DailyResult, DailyResultStatus } from '@/types/dailyResult'
 import { todayInTimezone } from '@/utils/date'
 
 export interface DashboardOutletContext {
@@ -31,33 +31,18 @@ export function useDashboard() {
     [challenge, todayIso],
   )
 
-  const resultsByDayIndex = useMemo(() => {
-    const map = new Map<number, DailyResult>()
-    for (const result of results) map.set(result.dayIndex, result)
-    return map
-  }, [results])
+  const progress = useMemo(
+    () =>
+      todayIso
+        ? ChallengeProgressService.computeProgress(challenge, results, todayIso)
+        : null,
+    [challenge, results, todayIso],
+  )
 
   const dayIndex = view?.dayIndex ?? null
-  const todayResult =
-    dayIndex !== null ? resultsByDayIndex.get(dayIndex) : undefined
-
-  const recentStatuses: DailyResultStatus[] = useMemo(() => {
-    if (dayIndex === null) return []
-    const statuses: DailyResultStatus[] = []
-    // Today only counts once it has an outcome — while still unacted-on, it's
-    // neither a completion nor a miss, since the day isn't over yet.
-    if (todayResult) statuses.push(todayResult.status)
-    for (let i = dayIndex - 1; i >= 0; i--) {
-      statuses.push(resultsByDayIndex.get(i)?.status ?? 'missed')
-    }
-    return statuses
-  }, [dayIndex, resultsByDayIndex, todayResult])
-
-  const streak = StreakService.calculateCurrentStreak(recentStatuses)
-  const totalPoints = results.reduce((sum, r) => sum + r.pointsAwarded, 0)
-  const completedDays = results.filter((r) => r.status === 'completed').length
-  const skipsUsed = results.filter((r) => r.status === 'skipped').length
-  const skipsRemaining = Math.max(0, challenge.allowedSkips - skipsUsed)
+  const skipsRemaining = progress
+    ? Math.max(0, challenge.allowedSkips - progress.skipsUsed)
+    : 0
 
   async function completeToday(): Promise<void> {
     if (!user || !todayIso || dayIndex === null || !view?.todayPlan) return
@@ -69,11 +54,13 @@ export function useDashboard() {
       todayIso,
       points,
     )
+    void TeamService.syncMyProgressToTeams(user.uid)
   }
 
   async function skipToday(): Promise<void> {
     if (!user || !todayIso || dayIndex === null) return
     await DailyResultService.skipDay(challenge.id, user.uid, dayIndex, todayIso)
+    void TeamService.syncMyProgressToTeams(user.uid)
   }
 
   async function startNewChallenge(): Promise<void> {
@@ -84,12 +71,12 @@ export function useDashboard() {
   return {
     challenge,
     view,
-    loading: resultsLoading || !view,
-    todayResult,
-    streak,
-    totalPoints,
-    completedDays,
-    skipsUsed,
+    loading: resultsLoading || !view || !progress,
+    todayResult: progress?.todayResult,
+    streak: progress?.currentStreak ?? 0,
+    totalPoints: progress?.totalPoints ?? 0,
+    completedDays: progress?.completedDays ?? 0,
+    skipsUsed: progress?.skipsUsed ?? 0,
     skipsRemaining,
     completeToday,
     skipToday,

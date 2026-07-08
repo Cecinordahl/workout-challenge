@@ -27,6 +27,9 @@ export function TopBar() {
           <NavLink to="/history" className={navLinkClassName}>
             History
           </NavLink>
+          <NavLink to="/teams" className={navLinkClassName}>
+            Teams
+          </NavLink>
         </nav>
       </div>
       <Button variant="ghost" size="sm" onClick={handleSignOut}>
