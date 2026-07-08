@@ -55,3 +55,41 @@ describe('StreakService.calculateCurrentStreak', () => {
     ).toBe(0)
   })
 })
+
+describe('StreakService.calculateLongestStreak', () => {
+  it('returns 0 for no history', () => {
+    expect(StreakService.calculateLongestStreak([])).toBe(0)
+  })
+
+  it('finds the longest run anywhere in the sequence', () => {
+    expect(
+      StreakService.calculateLongestStreak([
+        'completed',
+        'completed',
+        'missed',
+        'completed',
+        'completed',
+        'completed',
+        'missed',
+        'completed',
+      ]),
+    ).toBe(3)
+  })
+
+  it('treats skips as neutral within a run', () => {
+    expect(
+      StreakService.calculateLongestStreak([
+        'completed',
+        'skipped',
+        'completed',
+        'completed',
+      ]),
+    ).toBe(3)
+  })
+
+  it('returns 0 when nothing was ever completed', () => {
+    expect(
+      StreakService.calculateLongestStreak(['missed', 'skipped', 'missed']),
+    ).toBe(0)
+  })
+})

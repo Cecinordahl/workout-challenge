@@ -22,4 +22,25 @@ export const StreakService = {
     }
     return streak
   },
+
+  /**
+   * The longest run achieved anywhere in a finished challenge's day
+   * sequence (order doesn't matter — oldest-first or newest-first give the
+   * same result), using the same completed/skipped/missed rules.
+   */
+  calculateLongestStreak(statuses: DailyResultStatus[]): number {
+    let longest = 0
+    let current = 0
+    for (const status of statuses) {
+      if (status === 'completed') {
+        current += 1
+        longest = Math.max(longest, current)
+      } else if (status === 'skipped') {
+        continue
+      } else {
+        current = 0
+      }
+    }
+    return longest
+  },
 }

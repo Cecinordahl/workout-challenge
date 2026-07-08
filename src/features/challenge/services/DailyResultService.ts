@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -14,6 +15,15 @@ import type { DailyResult, StoredDailyResultStatus } from '@/types/dailyResult'
 
 function dailyResultDocId(challengeId: string, dayIndex: number): string {
   return `${challengeId}_${dayIndex}`
+}
+
+function resultsForChallengeQuery(challengeId: string, userId: string) {
+  return query(
+    collection(db, 'dailyResults'),
+    where('challengeId', '==', challengeId),
+    where('userId', '==', userId),
+    orderBy('dayIndex', 'asc'),
+  )
 }
 
 function mapResults(snapshot: QuerySnapshot): DailyResult[] {
@@ -75,14 +85,21 @@ export const DailyResultService = {
     userId: string,
     callback: (results: DailyResult[]) => void,
   ): () => void {
-    const resultsQuery = query(
-      collection(db, 'dailyResults'),
-      where('challengeId', '==', challengeId),
-      where('userId', '==', userId),
-      orderBy('dayIndex', 'asc'),
+    return onSnapshot(
+      resultsForChallengeQuery(challengeId, userId),
+      (snapshot) => {
+        callback(mapResults(snapshot))
+      },
     )
-    return onSnapshot(resultsQuery, (snapshot) => {
-      callback(mapResults(snapshot))
-    })
+  },
+
+  async getResults(
+    challengeId: string,
+    userId: string,
+  ): Promise<DailyResult[]> {
+    const snapshot = await getDocs(
+      resultsForChallengeQuery(challengeId, userId),
+    )
+    return mapResults(snapshot)
   },
 }

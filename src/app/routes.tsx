@@ -9,6 +9,7 @@ import { NewChallengePage } from '@/features/challenge/components/NewChallengePa
 import { RequireActiveChallenge } from '@/features/challenge/components/RequireActiveChallenge'
 import { RedirectIfActiveChallenge } from '@/features/challenge/components/RedirectIfActiveChallenge'
 import { DashboardPage } from '@/features/dashboard/components/DashboardPage'
+import { HistoryPage } from '@/features/history/components/HistoryPage'
 
 export const router = createBrowserRouter([
   {
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
             element: <RequireActiveChallenge />,
             children: [{ path: '/', element: <DashboardPage /> }],
           },
+          { path: '/history', element: <HistoryPage /> },
         ],
       },
     ],

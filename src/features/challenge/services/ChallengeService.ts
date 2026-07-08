@@ -2,6 +2,7 @@ import {
   addDoc,
   collection,
   doc,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
@@ -74,6 +75,19 @@ export const ChallengeService = {
       status: 'completed',
       completed: true,
     })
+  },
+
+  async getPastChallenges(ownerId: string): Promise<Challenge[]> {
+    const pastChallengesQuery = query(
+      challengesCollection(),
+      where('ownerId', '==', ownerId),
+      where('status', 'in', ['completed', 'cancelled']),
+      orderBy('createdAt', 'desc'),
+    )
+    const snapshot = await getDocs(pastChallengesQuery)
+    return snapshot.docs
+      .map((docSnapshot) => mapChallenge(docSnapshot))
+      .filter((challenge): challenge is Challenge => challenge !== null)
   },
 
   subscribeToActiveChallenge(
