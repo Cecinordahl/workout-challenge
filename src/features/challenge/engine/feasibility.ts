@@ -1,4 +1,9 @@
-import type { ChallengeParams } from './types'
+export interface FeasibilityParams {
+  durationDays: number
+  targetValue: number
+  dailyMinimum: number
+  dailyMaximum: number
+}
 
 export interface FeasibilityResult {
   feasible: boolean
@@ -11,7 +16,7 @@ export interface FeasibilityResult {
  * time so the engine itself never has to make an impossible jump — infeasible
  * configurations are rejected before generation is ever attempted.
  */
-export function checkFeasibility(params: ChallengeParams): FeasibilityResult {
+export function checkFeasibility(params: FeasibilityParams): FeasibilityResult {
   const { durationDays, targetValue, dailyMinimum, dailyMaximum } = params
 
   if (durationDays <= 0) {

@@ -5,6 +5,9 @@ import { PublicOnly } from '@/components/layout/PublicOnly'
 import { LoginPage } from '@/features/authentication/components/LoginPage'
 import { SignupPage } from '@/features/authentication/components/SignupPage'
 import { AccountPage } from '@/features/authentication/components/AccountPage'
+import { NewChallengePage } from '@/features/challenge/components/NewChallengePage'
+import { RequireActiveChallenge } from '@/features/challenge/components/RequireActiveChallenge'
+import { RedirectIfActiveChallenge } from '@/features/challenge/components/RedirectIfActiveChallenge'
 
 export const router = createBrowserRouter([
   {
@@ -21,6 +24,15 @@ export const router = createBrowserRouter([
   },
   {
     element: <RequireAuth />,
-    children: [{ path: '/', element: <AccountPage /> }],
+    children: [
+      {
+        element: <RedirectIfActiveChallenge />,
+        children: [{ path: '/challenge/new', element: <NewChallengePage /> }],
+      },
+      {
+        element: <RequireActiveChallenge />,
+        children: [{ path: '/', element: <AccountPage /> }],
+      },
+    ],
   },
 ])

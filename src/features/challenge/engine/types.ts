@@ -1,4 +1,6 @@
-export type GoalType = 'distance' | 'time'
+import type { GoalType } from '@/types/challenge'
+
+export type { GoalType }
 
 export type DayType = 'normal' | 'hero' | 'recovery'
 
