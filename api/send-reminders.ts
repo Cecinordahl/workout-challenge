@@ -1,27 +1,37 @@
-import { initializeApp } from 'firebase-admin/app'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import {
+  cert,
+  getApps,
+  initializeApp,
+  type ServiceAccount,
+} from 'firebase-admin/app'
 import {
   FieldValue,
   getFirestore,
   type DocumentData,
+  type Firestore,
   type QueryDocumentSnapshot,
 } from 'firebase-admin/firestore'
 import { getMessaging } from 'firebase-admin/messaging'
-import { onSchedule } from 'firebase-functions/v2/scheduler'
-import { logger } from 'firebase-functions'
 import {
   currentTimeInTimezone,
   daysBetweenIsoDates,
-  isSameTimeBucket,
+  isAtOrAfterReminderTime,
   todayInTimezone,
-} from './date'
-import { calculateCurrentStreak, type DailyResultStatus } from './streak'
+} from './_lib/date.js'
+import {
+  calculateCurrentStreak,
+  type DailyResultStatus,
+} from './_lib/streak.js'
 
-initializeApp()
-
-const BUCKET_MINUTES = 30
+if (getApps().length === 0) {
+  const serviceAccount = JSON.parse(
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY ?? '{}',
+  ) as ServiceAccount
+  initializeApp({ credential: cert(serviceAccount) })
+}
 
 interface UserDoc {
-  displayName: string
   timezone: string
   fcmTokens?: string[]
   notificationSettings: {
@@ -44,8 +54,11 @@ interface DailyResultDoc {
   status: 'completed' | 'skipped'
 }
 
+type NotificationType =
+  'dailyReminder' | 'tomorrowWorkoutReady' | 'streakReminder'
+
 async function sendPush(
-  db: FirebaseFirestore.Firestore,
+  db: Firestore,
   userId: string,
   tokens: string[],
   title: string,
@@ -70,9 +83,9 @@ async function sendPush(
 }
 
 async function createNotificationIfNew(
-  db: FirebaseFirestore.Firestore,
+  db: Firestore,
   userId: string,
-  type: 'dailyReminder' | 'tomorrowWorkoutReady' | 'streakReminder',
+  type: NotificationType,
   todayIso: string,
   title: string,
   body: string,
@@ -93,32 +106,28 @@ async function createNotificationIfNew(
   return true
 }
 
-/**
- * Runs every 30 minutes, checking every active challenge's owner against
- * their own local reminder time. Each of the three notification types is
- * deduplicated per user per day via a deterministic doc ID, so re-running
- * within the same day never double-sends.
- */
-export const sendReminders = onSchedule(
-  `every ${BUCKET_MINUTES} minutes`,
-  async () => {
-    const db = getFirestore()
-
-    const activeChallenges = await db
-      .collection('challenges')
-      .where('status', '==', 'active')
-      .get()
-
-    await Promise.all(
-      activeChallenges.docs.map((challengeSnap) =>
-        processChallenge(db, challengeSnap),
-      ),
-    )
-  },
-)
+async function notify(
+  db: Firestore,
+  userId: string,
+  tokens: string[],
+  type: NotificationType,
+  todayIso: string,
+  title: string,
+  body: string,
+): Promise<void> {
+  const sent = await createNotificationIfNew(
+    db,
+    userId,
+    type,
+    todayIso,
+    title,
+    body,
+  )
+  if (sent) await sendPush(db, userId, tokens, title, body)
+}
 
 async function processChallenge(
-  db: FirebaseFirestore.Firestore,
+  db: Firestore,
   challengeSnap: QueryDocumentSnapshot<DocumentData>,
 ): Promise<void> {
   const challenge = challengeSnap.data() as ChallengeDoc
@@ -127,8 +136,11 @@ async function processChallenge(
   const user = userSnap.data() as UserDoc
 
   const nowLocal = currentTimeInTimezone(user.timezone)
-  const { reminderTime } = user.notificationSettings
-  if (!isSameTimeBucket(nowLocal, reminderTime, BUCKET_MINUTES)) return
+  if (
+    !isAtOrAfterReminderTime(nowLocal, user.notificationSettings.reminderTime)
+  ) {
+    return
+  }
 
   const todayIso = todayInTimezone(user.timezone)
   const dayIndex = daysBetweenIsoDates(challenge.startDate, todayIso)
@@ -157,64 +169,62 @@ async function processChallenge(
     const streak = calculateCurrentStreak(recentStatuses)
 
     if (streak > 0 && user.notificationSettings.streakReminder) {
-      const sent = await createNotificationIfNew(
+      await notify(
         db,
         challenge.ownerId,
+        tokens,
         'streakReminder',
         todayIso,
         'Keep your streak alive!',
         `You have a ${streak}-day streak going in "${challenge.title}" — don't miss today.`,
       )
-      if (sent) {
-        await sendPush(
-          db,
-          challenge.ownerId,
-          tokens,
-          'Keep your streak alive!',
-          `You have a ${streak}-day streak going in "${challenge.title}" — don't miss today.`,
-        )
-      }
     } else if (user.notificationSettings.dailyReminder) {
-      const sent = await createNotificationIfNew(
+      await notify(
         db,
         challenge.ownerId,
+        tokens,
         'dailyReminder',
         todayIso,
         "Time for today's workout",
         `"${challenge.title}" has a workout waiting for you today.`,
       )
-      if (sent) {
-        await sendPush(
-          db,
-          challenge.ownerId,
-          tokens,
-          "Time for today's workout",
-          `"${challenge.title}" has a workout waiting for you today.`,
-        )
-      }
     }
   }
 
   const hasTomorrow = dayIndex + 1 < challenge.durationDays
   if (hasTomorrow && user.notificationSettings.tomorrowWorkoutReady) {
-    const sent = await createNotificationIfNew(
+    await notify(
       db,
       challenge.ownerId,
+      tokens,
       'tomorrowWorkoutReady',
       todayIso,
       "Tomorrow's workout is ready",
       `Your next day in "${challenge.title}" is ready whenever you are.`,
     )
-    if (sent) {
-      await sendPush(
-        db,
-        challenge.ownerId,
-        tokens,
-        "Tomorrow's workout is ready",
-        `Your next day in "${challenge.title}" is ready whenever you are.`,
-      )
-    }
+  }
+}
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
+  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
   }
 
-  logger.debug('processed challenge', { challengeId: challengeSnap.id })
+  const db = getFirestore()
+  const activeChallenges = await db
+    .collection('challenges')
+    .where('status', '==', 'active')
+    .get()
+
+  await Promise.all(
+    activeChallenges.docs.map((challengeSnap) =>
+      processChallenge(db, challengeSnap),
+    ),
+  )
+
+  res.status(200).json({ processed: activeChallenges.size })
 }
