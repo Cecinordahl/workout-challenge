@@ -18,4 +18,5 @@ export interface UserProfile {
   timezone: string
   distanceUnit: DistanceUnit
   notificationSettings: NotificationSettings
+  fcmTokens: string[]
 }

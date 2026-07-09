@@ -62,5 +62,13 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.auth.uid == request.resource.data.createdBy;
     }
+
+    match /notifications/{notificationId} {
+      // No client `create` rule — these are only ever written by the
+      // scheduled Cloud Function via the Admin SDK, which bypasses rules
+      // entirely. Clients can only read their own and mark them read.
+      allow read, update: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+    }
   }
 }

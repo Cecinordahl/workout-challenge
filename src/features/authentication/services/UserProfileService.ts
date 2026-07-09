@@ -1,13 +1,16 @@
 import {
+  arrayRemove,
+  arrayUnion,
   doc,
   getDoc,
   onSnapshot,
   serverTimestamp,
   setDoc,
+  updateDoc,
   type DocumentSnapshot,
 } from 'firebase/firestore'
 import { db } from '@/services/firebase/config'
-import type { UserProfile } from '@/types/user'
+import type { NotificationSettings, UserProfile } from '@/types/user'
 
 type UserProfileDocData = Omit<UserProfile, 'id'>
 
@@ -38,6 +41,7 @@ export const UserProfileService = {
         tomorrowWorkoutReady: true,
         streakReminder: true,
       },
+      fcmTokens: [],
     })
   },
 
@@ -53,5 +57,20 @@ export const UserProfileService = {
     return onSnapshot(userDocRef(uid), (snapshot) => {
       callback(mapUserProfile(snapshot))
     })
+  },
+
+  async updateNotificationSettings(
+    uid: string,
+    settings: NotificationSettings,
+  ): Promise<void> {
+    await updateDoc(userDocRef(uid), { notificationSettings: settings })
+  },
+
+  async addFcmToken(uid: string, token: string): Promise<void> {
+    await updateDoc(userDocRef(uid), { fcmTokens: arrayUnion(token) })
+  },
+
+  async removeFcmToken(uid: string, token: string): Promise<void> {
+    await updateDoc(userDocRef(uid), { fcmTokens: arrayRemove(token) })
   },
 }
