@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { FadeIn } from '@/components/layout/FadeIn'
 import { FullScreenSpinner } from '@/components/layout/FullScreenSpinner'
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard'
 import { ChallengeCompleteCard } from '@/features/dashboard/components/ChallengeCompleteCard'
@@ -43,39 +44,45 @@ export function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-4 p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{challenge.title}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              Day {dayNumber} of {challenge.durationDays}
-            </span>
-            <div className="flex gap-2">
-              <Badge variant="secondary">{streak} day streak</Badge>
-              <Badge variant="secondary">{totalPoints} pts</Badge>
+      <FadeIn>
+        <Card>
+          <CardHeader>
+            <CardTitle>{challenge.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                Day {dayNumber} of {challenge.durationDays}
+              </span>
+              <div className="flex gap-2">
+                <Badge variant="secondary">{streak} day streak</Badge>
+                <Badge variant="secondary">{totalPoints} pts</Badge>
+              </div>
             </div>
-          </div>
-          <Progress value={progressPercent} />
-        </CardContent>
-      </Card>
+            <Progress value={progressPercent} />
+          </CardContent>
+        </Card>
+      </FadeIn>
 
       {view.todayPlan && (
-        <TodayWorkoutCard
-          plan={view.todayPlan}
-          goalType={challenge.goalType}
-          result={todayResult}
-          skipsRemaining={skipsRemaining}
-          onComplete={completeToday}
-          onSkip={skipToday}
-        />
+        <FadeIn delay={0.05}>
+          <TodayWorkoutCard
+            plan={view.todayPlan}
+            goalType={challenge.goalType}
+            result={todayResult}
+            skipsRemaining={skipsRemaining}
+            onComplete={completeToday}
+            onSkip={skipToday}
+          />
+        </FadeIn>
       )}
 
-      <TomorrowPreviewCard
-        plan={view.tomorrowPlan}
-        goalType={challenge.goalType}
-      />
+      <FadeIn delay={0.1}>
+        <TomorrowPreviewCard
+          plan={view.tomorrowPlan}
+          goalType={challenge.goalType}
+        />
+      </FadeIn>
     </div>
   )
 }

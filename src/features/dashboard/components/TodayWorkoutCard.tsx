@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -67,32 +68,52 @@ export function TodayWorkoutCard({
           {formatGoalValue(plan.value, goalType)}
         </p>
 
-        {result ? (
-          <Badge
-            variant={result.status === 'completed' ? 'default' : 'secondary'}
-          >
-            {result.status === 'completed' ? 'Completed' : 'Skipped'}
-          </Badge>
-        ) : (
-          <div className="flex gap-2">
-            <Button
-              className="flex-1"
-              disabled={isSubmitting}
-              onClick={() => void handleComplete()}
+        <AnimatePresence mode="wait" initial={false}>
+          {result ? (
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.15 }}
             >
-              Complete
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1"
-              disabled={isSubmitting || skipsRemaining <= 0}
-              onClick={() => void handleSkip()}
+              <Badge
+                variant={
+                  result.status === 'completed' ? 'default' : 'secondary'
+                }
+              >
+                {result.status === 'completed' ? 'Completed' : 'Skipped'}
+              </Badge>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="actions"
+              className="flex gap-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
             >
-              Skip{' '}
-              {skipsRemaining <= 0 ? '(none left)' : `(${skipsRemaining} left)`}
-            </Button>
-          </div>
-        )}
+              <Button
+                className="flex-1"
+                disabled={isSubmitting}
+                onClick={() => void handleComplete()}
+              >
+                Complete
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                disabled={isSubmitting || skipsRemaining <= 0}
+                onClick={() => void handleSkip()}
+              >
+                Skip{' '}
+                {skipsRemaining <= 0
+                  ? '(none left)'
+                  : `(${skipsRemaining} left)`}
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </CardContent>
     </Card>
   )
