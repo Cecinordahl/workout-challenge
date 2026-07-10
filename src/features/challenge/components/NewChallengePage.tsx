@@ -136,7 +136,22 @@ export function NewChallengePage() {
   const unitLabel = goalType === 'distance' ? 'km' : 'minutes'
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-6">
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6">
+      <div className="w-full max-w-md space-y-2 text-sm">
+        <p>
+          Pick a total goal and a timeframe, and we'll turn it into a daily plan
+          for you — not just an even split. Expect a few lighter{' '}
+          <strong>recovery days</strong> and a few bigger{' '}
+          <strong>hero days</strong> mixed in with your regular days, so the
+          effort builds gradually instead of staying flat.
+        </p>
+        <p className="text-muted-foreground">
+          Example: a 30-day, 90&nbsp;km challenge averages 3&nbsp;km/day, but
+          your actual plan might look like ~1.5&nbsp;km recovery days,
+          ~3&nbsp;km regular days, and ~5&nbsp;km hero days — always adding up
+          to exactly 90&nbsp;km by day 30.
+        </p>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create your challenge</CardTitle>
