@@ -10,6 +10,7 @@ import { useAuth } from '@/features/authentication/hooks/useAuth'
 import { UserProfileService } from '@/features/authentication/services/UserProfileService'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
 import { NotificationService } from '@/features/notifications/services/NotificationService'
+import { StravaConnectionCard } from '@/features/integrations/components/StravaConnectionCard'
 import type { NotificationSettings } from '@/types/user'
 
 export function NotificationsPage() {
@@ -141,6 +142,8 @@ export function NotificationsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <StravaConnectionCard />
     </div>
   )
 }

@@ -70,5 +70,12 @@ service cloud.firestore {
       allow read, update: if request.auth != null
         && request.auth.uid == resource.data.userId;
     }
+
+    match /fitnessConnections/{connectionId} {
+      // Holds OAuth tokens for third-party fitness providers (Strava, etc).
+      // Server-only: no client read/write at all — only our Vercel API
+      // routes touch this, via the Admin SDK, which bypasses rules.
+      allow read, write: if false;
+    }
   }
 }

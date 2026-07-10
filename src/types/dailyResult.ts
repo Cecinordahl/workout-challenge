@@ -6,6 +6,8 @@ export type StoredDailyResultStatus = 'completed' | 'skipped'
 
 export type DailyResultStatus = StoredDailyResultStatus | 'missed'
 
+export type DailyResultSource = 'manual' | 'strava'
+
 export interface DailyResult {
   id: string
   challengeId: string
@@ -15,4 +17,6 @@ export interface DailyResult {
   status: StoredDailyResultStatus
   pointsAwarded: number
   completedAt: Timestamp
+  /** Absent for older records written before this field existed — treat as 'manual'. */
+  source?: DailyResultSource
 }

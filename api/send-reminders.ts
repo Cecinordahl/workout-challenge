@@ -1,18 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import {
-  cert,
-  getApps,
-  initializeApp,
-  type ServiceAccount,
-} from 'firebase-admin/app'
-import {
   FieldValue,
-  getFirestore,
   type DocumentData,
   type Firestore,
   type QueryDocumentSnapshot,
 } from 'firebase-admin/firestore'
 import { getMessaging } from 'firebase-admin/messaging'
+import { db } from './_lib/firebaseAdmin.js'
 import {
   currentTimeInTimezone,
   daysBetweenIsoDates,
@@ -23,13 +17,6 @@ import {
   calculateCurrentStreak,
   type DailyResultStatus,
 } from './_lib/streak.js'
-
-if (getApps().length === 0) {
-  const serviceAccount = JSON.parse(
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY ?? '{}',
-  ) as ServiceAccount
-  initializeApp({ credential: cert(serviceAccount) })
-}
 
 interface UserDoc {
   timezone: string
@@ -214,7 +201,6 @@ export default async function handler(
     return
   }
 
-  const db = getFirestore()
   const activeChallenges = await db
     .collection('challenges')
     .where('status', '==', 'active')

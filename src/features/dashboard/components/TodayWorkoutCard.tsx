@@ -81,7 +81,11 @@ export function TodayWorkoutCard({
                   result.status === 'completed' ? 'default' : 'secondary'
                 }
               >
-                {result.status === 'completed' ? 'Completed' : 'Skipped'}
+                {result.status === 'completed'
+                  ? result.source === 'strava'
+                    ? 'Completed via Strava'
+                    : 'Completed'
+                  : 'Skipped'}
               </Badge>
             </motion.div>
           ) : (

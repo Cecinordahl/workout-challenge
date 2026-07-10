@@ -9,6 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_APP_ID: string
   readonly VITE_FIREBASE_VAPID_KEY: string
   readonly VITE_USE_FIREBASE_EMULATOR?: string
+  readonly VITE_STRAVA_CLIENT_ID: string
 }
 
 interface ImportMeta {
