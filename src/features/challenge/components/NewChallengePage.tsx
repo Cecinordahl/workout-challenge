@@ -9,18 +9,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAuth } from '@/features/authentication/hooks/useAuth'
 import { checkFeasibility } from '@/features/challenge/engine/feasibility'
 import { getGoalSuggestions } from '@/features/challenge/engine/goalSuggestions'
+import { roundForGoalType } from '@/features/challenge/engine/roundForGoalType'
 import { suggestDailySpan } from '@/features/challenge/engine/suggestDailySpan'
 import { ChallengeService } from '@/features/challenge/services/ChallengeService'
+import { ChallengeRecommendationWizard } from '@/features/challenge/components/ChallengeRecommendationWizard'
+import { DURATION_PRESETS } from '@/features/challenge/constants'
 import { FullScreenSpinner } from '@/components/layout/FullScreenSpinner'
 import type { GoalType } from '@/types/challenge'
-
-const DURATION_PRESETS = [7, 14, 30, 90] as const
-
-function roundForGoalType(value: number, goalType: GoalType): number {
-  return goalType === 'distance'
-    ? Math.round(value * 10) / 10
-    : Math.round(value)
-}
 
 export function NewChallengePage() {
   const { user, profile } = useAuth()
@@ -42,6 +37,7 @@ export function NewChallengePage() {
   const [allowedSkips, setAllowedSkips] = useState('0')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [mode, setMode] = useState<'manual' | 'wizard'>('manual')
 
   const durationDays =
     durationChoice === 'custom'
@@ -75,6 +71,32 @@ export function NewChallengePage() {
   }
 
   if (!user || !profile) return <FullScreenSpinner />
+
+  function handleApplyRecommendation(recommendation: {
+    goalType: GoalType
+    durationDays: number
+    targetValue: number
+    dailyMinimum: number
+    dailyMaximum: number
+  }) {
+    setGoalType(recommendation.goalType)
+    const matchingPreset = DURATION_PRESETS.find(
+      (preset) => preset === recommendation.durationDays,
+    )
+    if (matchingPreset) {
+      setDurationChoice(matchingPreset)
+      setCustomDuration('')
+    } else {
+      setDurationChoice('custom')
+      setCustomDuration(String(recommendation.durationDays))
+    }
+    setTargetChoice('custom')
+    setCustomTarget(String(recommendation.targetValue))
+    setDailyMinimum(recommendation.dailyMinimum)
+    setDailyMaximum(recommendation.dailyMaximum)
+    setSpanTouched(true)
+    setMode('manual')
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -149,191 +171,222 @@ export function NewChallengePage() {
           Example: a 30-day, 90&nbsp;km challenge averages 3&nbsp;km/day, but
           your actual plan might look like ~1.5&nbsp;km recovery days,
           ~3&nbsp;km regular days, and ~5&nbsp;km hero days — always adding up
-          to exactly 90&nbsp;km by day 30.
+          to exactly 90&nbsp;km by day 30. Not sure what to pick? Try "Help me
+          choose" below.
         </p>
       </div>
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Create your challenge</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                required
-                placeholder="Challenge Name"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
 
-            <div className="space-y-2">
-              <Label>Goal type</Label>
-              <RadioGroup
-                value={goalType}
-                onValueChange={(value) => {
-                  setGoalType(value as GoalType)
-                  setTargetChoice(null)
-                  setCustomTarget('')
-                  setSpanTouched(false)
-                }}
-                className="flex gap-4"
-              >
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="distance" id="goalType-distance" />
-                  <Label htmlFor="goalType-distance">Distance</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="time" id="goalType-time" />
-                  <Label htmlFor="goalType-time">Time</Label>
-                </div>
-              </RadioGroup>
-            </div>
+      <div className="flex w-full max-w-md gap-2">
+        <Button
+          type="button"
+          variant={mode === 'manual' ? 'default' : 'outline'}
+          className="flex-1"
+          onClick={() => setMode('manual')}
+        >
+          I know my goal
+        </Button>
+        <Button
+          type="button"
+          variant={mode === 'wizard' ? 'default' : 'outline'}
+          className="flex-1"
+          onClick={() => setMode('wizard')}
+        >
+          Help me choose
+        </Button>
+      </div>
 
-            <div className="space-y-2">
-              <Label>Duration</Label>
-              <div className="flex flex-wrap gap-2">
-                {DURATION_PRESETS.map((preset) => (
-                  <Button
-                    key={preset}
-                    type="button"
-                    variant={durationChoice === preset ? 'default' : 'outline'}
-                    onClick={() => {
-                      setDurationChoice(preset)
-                      setTargetChoice(null)
-                      setCustomTarget('')
-                      setSpanTouched(false)
-                    }}
-                  >
-                    {preset} days
-                  </Button>
-                ))}
-                <Button
-                  type="button"
-                  variant={durationChoice === 'custom' ? 'default' : 'outline'}
-                  onClick={() => {
-                    setDurationChoice('custom')
+      {mode === 'wizard' ? (
+        <ChallengeRecommendationWizard onApply={handleApplyRecommendation} />
+      ) : (
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Create your challenge</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  required
+                  placeholder="Challenge Name"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Goal type</Label>
+                <RadioGroup
+                  value={goalType}
+                  onValueChange={(value) => {
+                    setGoalType(value as GoalType)
                     setTargetChoice(null)
                     setCustomTarget('')
                     setSpanTouched(false)
                   }}
+                  className="flex gap-4"
                 >
-                  Custom
-                </Button>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="distance" id="goalType-distance" />
+                    <Label htmlFor="goalType-distance">Distance</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="time" id="goalType-time" />
+                    <Label htmlFor="goalType-time">Time</Label>
+                  </div>
+                </RadioGroup>
               </div>
-              {durationChoice === 'custom' && (
-                <Input
-                  type="number"
-                  min={1}
-                  placeholder="Number of days"
-                  value={customDuration}
-                  onChange={(e) => {
-                    setCustomDuration(e.target.value)
-                    setSpanTouched(false)
-                  }}
-                />
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <Label>Goal ({unitLabel})</Label>
-              {goalSuggestions && (
+              <div className="space-y-2">
+                <Label>Duration</Label>
                 <div className="flex flex-wrap gap-2">
-                  {goalSuggestions.map((suggestion) => (
+                  {DURATION_PRESETS.map((preset) => (
                     <Button
-                      key={suggestion}
+                      key={preset}
                       type="button"
                       variant={
-                        targetChoice === suggestion ? 'default' : 'outline'
+                        durationChoice === preset ? 'default' : 'outline'
                       }
                       onClick={() => {
-                        setTargetChoice(suggestion)
+                        setDurationChoice(preset)
+                        setTargetChoice(null)
+                        setCustomTarget('')
                         setSpanTouched(false)
                       }}
                     >
-                      {suggestion}
+                      {preset} days
                     </Button>
                   ))}
                   <Button
                     type="button"
-                    variant={targetChoice === 'custom' ? 'default' : 'outline'}
+                    variant={
+                      durationChoice === 'custom' ? 'default' : 'outline'
+                    }
                     onClick={() => {
-                      setTargetChoice('custom')
+                      setDurationChoice('custom')
+                      setTargetChoice(null)
+                      setCustomTarget('')
                       setSpanTouched(false)
                     }}
                   >
                     Custom
                   </Button>
                 </div>
-              )}
-              {(!goalSuggestions || targetChoice === 'custom') && (
+                {durationChoice === 'custom' && (
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="Number of days"
+                    value={customDuration}
+                    onChange={(e) => {
+                      setCustomDuration(e.target.value)
+                      setSpanTouched(false)
+                    }}
+                  />
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Goal ({unitLabel})</Label>
+                {goalSuggestions && (
+                  <div className="flex flex-wrap gap-2">
+                    {goalSuggestions.map((suggestion) => (
+                      <Button
+                        key={suggestion}
+                        type="button"
+                        variant={
+                          targetChoice === suggestion ? 'default' : 'outline'
+                        }
+                        onClick={() => {
+                          setTargetChoice(suggestion)
+                          setSpanTouched(false)
+                        }}
+                      >
+                        {suggestion}
+                      </Button>
+                    ))}
+                    <Button
+                      type="button"
+                      variant={
+                        targetChoice === 'custom' ? 'default' : 'outline'
+                      }
+                      onClick={() => {
+                        setTargetChoice('custom')
+                        setSpanTouched(false)
+                      }}
+                    >
+                      Custom
+                    </Button>
+                  </div>
+                )}
+                {(!goalSuggestions || targetChoice === 'custom') && (
+                  <Input
+                    type="number"
+                    min={0}
+                    step="any"
+                    placeholder={`Total ${unitLabel}`}
+                    value={customTarget}
+                    onChange={(e) => {
+                      setCustomTarget(e.target.value)
+                      setSpanTouched(false)
+                    }}
+                  />
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dailyMinimum">Daily minimum</Label>
+                  <NumberStepper
+                    id="dailyMinimum"
+                    step={1}
+                    min={0}
+                    max={Number.isFinite(targetValue) ? targetValue : undefined}
+                    value={dailyMinimum}
+                    onChange={(value) => {
+                      setDailyMinimum(value)
+                      setSpanTouched(true)
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dailyMaximum">Daily maximum</Label>
+                  <NumberStepper
+                    id="dailyMaximum"
+                    step={1}
+                    min={0}
+                    max={Number.isFinite(targetValue) ? targetValue : undefined}
+                    value={dailyMaximum}
+                    onChange={(value) => {
+                      setDailyMaximum(value)
+                      setSpanTouched(true)
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="allowedSkips">Allowed skips</Label>
                 <Input
+                  id="allowedSkips"
                   type="number"
                   min={0}
-                  step="any"
-                  placeholder={`Total ${unitLabel}`}
-                  value={customTarget}
-                  onChange={(e) => {
-                    setCustomTarget(e.target.value)
-                    setSpanTouched(false)
-                  }}
-                />
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dailyMinimum">Daily minimum</Label>
-                <NumberStepper
-                  id="dailyMinimum"
                   step={1}
-                  min={0}
-                  max={Number.isFinite(targetValue) ? targetValue : undefined}
-                  value={dailyMinimum}
-                  onChange={(value) => {
-                    setDailyMinimum(value)
-                    setSpanTouched(true)
-                  }}
+                  value={allowedSkips}
+                  onChange={(e) => setAllowedSkips(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="dailyMaximum">Daily maximum</Label>
-                <NumberStepper
-                  id="dailyMaximum"
-                  step={1}
-                  min={0}
-                  max={Number.isFinite(targetValue) ? targetValue : undefined}
-                  value={dailyMaximum}
-                  onChange={(value) => {
-                    setDailyMaximum(value)
-                    setSpanTouched(true)
-                  }}
-                />
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="allowedSkips">Allowed skips</Label>
-              <Input
-                id="allowedSkips"
-                type="number"
-                min={0}
-                step={1}
-                value={allowedSkips}
-                onChange={(e) => setAllowedSkips(e.target.value)}
-              />
-            </div>
+              {error && <p className="text-destructive text-sm">{error}</p>}
 
-            {error && <p className="text-destructive text-sm">{error}</p>}
-
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating…' : 'Create challenge'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating…' : 'Create challenge'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
