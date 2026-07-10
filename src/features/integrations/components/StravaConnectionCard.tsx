@@ -67,6 +67,10 @@ export function StravaConnectionCard() {
             they meet your goal.
           </p>
         )}
+        <p className="text-muted-foreground mt-2 text-xs">
+          Garmin device? Turn on "Auto-sync to Strava" in the Garmin Connect
+          app, then connect Strava above — no separate Garmin setup needed.
+        </p>
       </CardContent>
     </Card>
   )
