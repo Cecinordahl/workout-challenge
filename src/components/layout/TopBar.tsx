@@ -1,7 +1,7 @@
-import { Moon, Sun } from 'lucide-react'
+import { Moon, Sun, User } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { AuthService } from '@/features/authentication/services/AuthService'
 import { useAuth } from '@/features/authentication/hooks/useAuth'
@@ -62,6 +62,20 @@ export function TopBar() {
             <Moon className="size-4" />
           )}
         </Button>
+        <NavLink
+          to="/account"
+          aria-label="Account"
+          className={({ isActive }) =>
+            cn(
+              buttonVariants({
+                variant: isActive ? 'secondary' : 'ghost',
+                size: 'icon-sm',
+              }),
+            )
+          }
+        >
+          <User className="size-4" />
+        </NavLink>
         <Button variant="ghost" size="sm" onClick={handleSignOut}>
           Sign out
         </Button>

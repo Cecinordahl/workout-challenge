@@ -15,6 +15,7 @@ import { TeamDetailPage } from '@/features/teams/components/TeamDetailPage'
 import { JoinTeamPage } from '@/features/teams/components/JoinTeamPage'
 import { NotificationsPage } from '@/features/notifications/components/NotificationsPage'
 import { StravaCallbackPage } from '@/features/integrations/components/StravaCallbackPage'
+import { AccountPage } from '@/features/authentication/components/AccountPage'
 
 export const router = createBrowserRouter([
   {
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
           { path: '/teams/:teamId', element: <TeamDetailPage /> },
           { path: '/invite/:code', element: <JoinTeamPage /> },
           { path: '/notifications', element: <NotificationsPage /> },
+          { path: '/account', element: <AccountPage /> },
           { path: '/strava/callback', element: <StravaCallbackPage /> },
         ],
       },
