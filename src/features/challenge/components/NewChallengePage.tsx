@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { NumberStepper } from '@/components/NumberStepper'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAuth } from '@/features/authentication/hooks/useAuth'
 import { checkFeasibility } from '@/features/challenge/engine/feasibility'
@@ -35,8 +36,8 @@ export function NewChallengePage() {
     null,
   )
   const [customTarget, setCustomTarget] = useState('')
-  const [dailyMinimum, setDailyMinimum] = useState('')
-  const [dailyMaximum, setDailyMaximum] = useState('')
+  const [dailyMinimum, setDailyMinimum] = useState(0)
+  const [dailyMaximum, setDailyMaximum] = useState(0)
   const [spanTouched, setSpanTouched] = useState(false)
   const [allowedSkips, setAllowedSkips] = useState('0')
   const [error, setError] = useState<string | null>(null)
@@ -69,10 +70,8 @@ export function NewChallengePage() {
   }, [durationDays, targetValue, goalType])
 
   if (suggestedSpan && !spanTouched) {
-    const prefilledMin = String(suggestedSpan.min)
-    const prefilledMax = String(suggestedSpan.max)
-    if (dailyMinimum !== prefilledMin) setDailyMinimum(prefilledMin)
-    if (dailyMaximum !== prefilledMax) setDailyMaximum(prefilledMax)
+    if (dailyMinimum !== suggestedSpan.min) setDailyMinimum(suggestedSpan.min)
+    if (dailyMaximum !== suggestedSpan.max) setDailyMaximum(suggestedSpan.max)
   }
 
   if (!user || !profile) return <FullScreenSpinner />
@@ -93,9 +92,7 @@ export function NewChallengePage() {
       setError('Enter a valid goal.')
       return
     }
-    const parsedMin = Number.parseFloat(dailyMinimum)
-    const parsedMax = Number.parseFloat(dailyMaximum)
-    if (!Number.isFinite(parsedMin) || !Number.isFinite(parsedMax)) {
+    if (!Number.isFinite(dailyMinimum) || !Number.isFinite(dailyMaximum)) {
       setError('Enter a valid daily minimum and maximum.')
       return
     }
@@ -108,8 +105,8 @@ export function NewChallengePage() {
     const feasibility = checkFeasibility({
       durationDays,
       targetValue,
-      dailyMinimum: parsedMin,
-      dailyMaximum: parsedMax,
+      dailyMinimum,
+      dailyMaximum,
     })
     if (!feasibility.feasible) {
       setError(feasibility.reason ?? 'This goal is not reachable.')
@@ -123,8 +120,8 @@ export function NewChallengePage() {
         goalType,
         durationDays,
         targetValue,
-        dailyMinimum: parsedMin,
-        dailyMaximum: parsedMax,
+        dailyMinimum,
+        dailyMaximum,
         allowedSkips: parsedSkips,
         timezone: profile!.timezone,
       })
@@ -151,7 +148,7 @@ export function NewChallengePage() {
               <Input
                 id="title"
                 required
-                placeholder="Christmas Challenge"
+                placeholder="Challenge Name"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -274,28 +271,28 @@ export function NewChallengePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="dailyMinimum">Daily minimum</Label>
-                <Input
+                <NumberStepper
                   id="dailyMinimum"
-                  type="number"
+                  step={1}
                   min={0}
-                  step="any"
+                  max={Number.isFinite(targetValue) ? targetValue : undefined}
                   value={dailyMinimum}
-                  onChange={(e) => {
-                    setDailyMinimum(e.target.value)
+                  onChange={(value) => {
+                    setDailyMinimum(value)
                     setSpanTouched(true)
                   }}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dailyMaximum">Daily maximum</Label>
-                <Input
+                <NumberStepper
                   id="dailyMaximum"
-                  type="number"
+                  step={1}
                   min={0}
-                  step="any"
+                  max={Number.isFinite(targetValue) ? targetValue : undefined}
                   value={dailyMaximum}
-                  onChange={(e) => {
-                    setDailyMaximum(e.target.value)
+                  onChange={(value) => {
+                    setDailyMaximum(value)
                     setSpanTouched(true)
                   }}
                 />
