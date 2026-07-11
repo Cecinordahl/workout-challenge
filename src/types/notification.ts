@@ -1,7 +1,10 @@
 import type { Timestamp } from 'firebase/firestore'
 
 export type NotificationType =
-  'dailyReminder' | 'tomorrowWorkoutReady' | 'streakReminder'
+  | 'dailyReminder'
+  | 'tomorrowWorkoutReady'
+  | 'streakReminder'
+  | 'missedDayCheck'
 
 export interface AppNotification {
   id: string

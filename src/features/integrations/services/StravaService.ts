@@ -5,6 +5,15 @@ export interface StravaStatus {
   athleteId?: string
 }
 
+export type StravaSyncFailureReason =
+  | 'not_connected'
+  | 'already_logged'
+  | 'no_activity_found'
+
+export type StravaSyncResult =
+  | { synced: true }
+  | { synced: false; reason: StravaSyncFailureReason }
+
 const STRAVA_OAUTH_AUTHORIZE_URL = 'https://www.strava.com/oauth/authorize'
 
 async function authorizedFetch(path: string, init?: RequestInit) {
@@ -53,5 +62,20 @@ export const StravaService = {
       method: 'POST',
     })
     if (!res.ok) throw new Error('Failed to disconnect Strava account.')
+  },
+
+  /** Re-checks a specific past day's Strava activities and logs it if a qualifying run is found. */
+  async syncDay(
+    challengeId: string,
+    dayIndex: number,
+    date: string,
+  ): Promise<StravaSyncResult> {
+    const res = await authorizedFetch('/api/strava-sync-day', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challengeId, dayIndex, date }),
+    })
+    if (!res.ok) throw new Error('Failed to sync with Strava.')
+    return res.json() as Promise<StravaSyncResult>
   },
 }

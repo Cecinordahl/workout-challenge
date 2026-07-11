@@ -14,9 +14,13 @@ export interface FitnessConnectionDoc {
   connectedAt: Timestamp
 }
 
-function docId(userId: string, provider: FitnessProvider): string {
+export function connectionDocId(
+  userId: string,
+  provider: FitnessProvider,
+): string {
   return `${userId}_${provider}`
 }
+const docId = connectionDocId
 
 function collection() {
   return db.collection('fitnessConnections')

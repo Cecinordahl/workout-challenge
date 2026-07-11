@@ -7,6 +7,7 @@ export interface NotificationSettings {
   reminderTime: string
   tomorrowWorkoutReady: boolean
   streakReminder: boolean
+  missedDayCheck: boolean
 }
 
 export interface UserProfile {

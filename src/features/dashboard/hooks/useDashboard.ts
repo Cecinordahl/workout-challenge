@@ -8,11 +8,22 @@ import { ChallengeService } from '@/features/challenge/services/ChallengeService
 import { DailyResultService } from '@/features/challenge/services/DailyResultService'
 import { PointsService } from '@/features/challenge/services/PointsService'
 import { TeamService } from '@/features/teams/services/TeamService'
+import {
+  StravaService,
+  type StravaSyncResult,
+} from '@/features/integrations/services/StravaService'
+import type { DailyPlan } from '@/features/challenge/engine/types'
 import type { Challenge } from '@/types/challenge'
-import { todayInTimezone } from '@/utils/date'
+import { addDaysToIsoDate, todayInTimezone } from '@/utils/date'
 
 export interface DashboardOutletContext {
   challenge: Challenge
+}
+
+export interface MissedDayInfo {
+  dayIndex: number
+  date: string
+  plan: DailyPlan
 }
 
 export function useDashboard() {
@@ -44,6 +55,20 @@ export function useDashboard() {
     ? Math.max(0, challenge.allowedSkips - progress.skipsUsed)
     : 0
 
+  const missedYesterday = useMemo<MissedDayInfo | null>(() => {
+    if (dayIndex === null || dayIndex <= 0 || !todayIso) return null
+    const yesterdayIndex = dayIndex - 1
+    const hasResult = results.some((r) => r.dayIndex === yesterdayIndex)
+    if (hasResult) return null
+    const plan = ChallengeViewService.getPlanForDay(challenge, yesterdayIndex)
+    if (!plan) return null
+    return {
+      dayIndex: yesterdayIndex,
+      date: addDaysToIsoDate(todayIso, -1),
+      plan,
+    }
+  }, [challenge, dayIndex, results, todayIso])
+
   async function completeToday(): Promise<void> {
     if (!user || !todayIso || dayIndex === null || !view?.todayPlan) return
     const points = PointsService.pointsForDay(view.todayPlan.type)
@@ -68,6 +93,41 @@ export function useDashboard() {
     void navigate('/challenge/new', { replace: true })
   }
 
+  async function confirmYesterdaySkipped(): Promise<void> {
+    if (!user || !missedYesterday) return
+    await DailyResultService.skipDay(
+      challenge.id,
+      user.uid,
+      missedYesterday.dayIndex,
+      missedYesterday.date,
+    )
+    void TeamService.syncMyProgressToTeams(user.uid)
+  }
+
+  async function logYesterdayManually(): Promise<void> {
+    if (!user || !missedYesterday) return
+    const points = PointsService.pointsForDay(missedYesterday.plan.type)
+    await DailyResultService.completeDay(
+      challenge.id,
+      user.uid,
+      missedYesterday.dayIndex,
+      missedYesterday.date,
+      points,
+    )
+    void TeamService.syncMyProgressToTeams(user.uid)
+  }
+
+  async function syncYesterdayWithStrava(): Promise<StravaSyncResult> {
+    if (!missedYesterday) return { synced: false, reason: 'already_logged' }
+    const result = await StravaService.syncDay(
+      challenge.id,
+      missedYesterday.dayIndex,
+      missedYesterday.date,
+    )
+    if (result.synced) void TeamService.syncMyProgressToTeams(user?.uid ?? '')
+    return result
+  }
+
   return {
     challenge,
     view,
@@ -81,5 +141,9 @@ export function useDashboard() {
     completeToday,
     skipToday,
     startNewChallenge,
+    missedYesterday,
+    confirmYesterdaySkipped,
+    logYesterdayManually,
+    syncYesterdayWithStrava,
   }
 }

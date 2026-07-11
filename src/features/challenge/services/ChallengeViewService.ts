@@ -18,6 +18,20 @@ export interface ChallengeView {
  * hidden by simply never being returned from here.
  */
 export const ChallengeViewService = {
+  /** Regenerates the plan and returns a single arbitrary day's workout (past, present, or future). */
+  getPlanForDay(challenge: Challenge, dayIndex: number): DailyPlan | null {
+    const engine = getChallengeEngine(challenge.algorithmVersion)
+    const plan = engine.generatePlan({
+      durationDays: challenge.durationDays,
+      goalType: challenge.goalType,
+      targetValue: challenge.targetValue,
+      dailyMinimum: challenge.dailyMinimum,
+      dailyMaximum: challenge.dailyMaximum,
+      randomSeed: challenge.randomSeed,
+    })
+    return plan[dayIndex] ?? null
+  },
+
   getView(challenge: Challenge, todayIso: string): ChallengeView {
     const engine = getChallengeEngine(challenge.algorithmVersion)
     const plan = engine.generatePlan({

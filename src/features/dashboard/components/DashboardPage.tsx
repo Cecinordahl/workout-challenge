@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { FadeIn } from '@/components/layout/FadeIn'
 import { FullScreenSpinner } from '@/components/layout/FullScreenSpinner'
+import { useState } from 'react'
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard'
 import { ChallengeCompleteCard } from '@/features/dashboard/components/ChallengeCompleteCard'
+import { MissedDayBanner } from '@/features/dashboard/components/MissedDayBanner'
 import { TodayWorkoutCard } from '@/features/dashboard/components/TodayWorkoutCard'
 import { TomorrowPreviewCard } from '@/features/dashboard/components/TomorrowPreviewCard'
 
@@ -21,7 +23,14 @@ export function DashboardPage() {
     completeToday,
     skipToday,
     startNewChallenge,
+    missedYesterday,
+    confirmYesterdaySkipped,
+    logYesterdayManually,
+    syncYesterdayWithStrava,
   } = useDashboard()
+  const [dismissedMissedDayIndex, setDismissedMissedDayIndex] = useState<
+    number | null
+  >(null)
 
   if (loading || !view) return <FullScreenSpinner />
 
@@ -63,6 +72,21 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </FadeIn>
+
+      {missedYesterday && missedYesterday.dayIndex !== dismissedMissedDayIndex && (
+        <FadeIn>
+          <MissedDayBanner
+            date={missedYesterday.date}
+            plan={missedYesterday.plan}
+            goalType={challenge.goalType}
+            skipsRemaining={skipsRemaining}
+            onConfirmSkipped={confirmYesterdaySkipped}
+            onLogManually={logYesterdayManually}
+            onSyncStrava={syncYesterdayWithStrava}
+            onDismiss={() => setDismissedMissedDayIndex(missedYesterday.dayIndex)}
+          />
+        </FadeIn>
+      )}
 
       {view.todayPlan && (
         <FadeIn delay={0.05}>

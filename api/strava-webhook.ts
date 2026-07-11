@@ -1,18 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { FieldValue } from 'firebase-admin/firestore'
 import { db } from './_lib/firebaseAdmin.js'
-import {
-  getConnectionByAthleteId,
-  getValidAccessToken,
-} from './_lib/fitnessConnections.js'
-import {
-  isRunActivity,
-  listActivities,
-  type StravaActivity,
-} from './_lib/strava.js'
-import { ChallengeEngineV1 } from './_lib/engine/ChallengeEngineV1.js'
+import { getConnectionByAthleteId } from './_lib/fitnessConnections.js'
+import { syncDayFromStrava } from './_lib/stravaDaySync.js'
 import type { GoalType } from './_lib/engine/types.js'
-import { pointsForDay } from './_lib/points.js'
 import { daysBetweenIsoDates, todayInTimezone } from './_lib/date.js'
 
 interface UserDoc {
@@ -30,40 +20,6 @@ interface ChallengeDoc {
   dailyMaximum: number
   randomSeed: string
   algorithmVersion: string
-}
-
-function activityValueFor(
-  activity: StravaActivity,
-  goalType: GoalType,
-): number {
-  return goalType === 'distance'
-    ? activity.distance / 1000
-    : activity.moving_time / 60
-}
-
-/**
- * Looks at today's run activities in chronological order. As soon as the
- * running total reaches the goal, stops and returns that total — so a
- * single qualifying run is used alone, and a too-short run is summed with
- * whichever later runs push the total over the line.
- */
-function findQualifyingTotal(
-  activities: StravaActivity[],
-  todayIso: string,
-  goalType: GoalType,
-  target: number,
-): number | null {
-  const todaysRuns = activities
-    .filter(isRunActivity)
-    .filter((a) => a.start_date_local.slice(0, 10) === todayIso)
-    .sort((a, b) => a.start_date_local.localeCompare(b.start_date_local))
-
-  let total = 0
-  for (const run of todaysRuns) {
-    total += activityValueFor(run, goalType)
-    if (total >= target) return total
-  }
-  return null
 }
 
 async function processAthleteActivity(athleteId: string): Promise<void> {
@@ -94,42 +50,22 @@ async function processAthleteActivity(athleteId: string): Promise<void> {
     .doc(`${challengeDoc.id}_${dayIndex}`)
   if ((await resultRef.get()).exists) return // already completed or skipped
 
-  const accessToken = await getValidAccessToken(connectionId, connection)
-  const nowSeconds = Math.floor(Date.now() / 1000)
-  const activities = await listActivities(
-    accessToken,
-    nowSeconds - 2 * 86_400,
-    nowSeconds + 86_400,
-  )
-
-  const plan = new ChallengeEngineV1().generatePlan({
-    durationDays: challenge.durationDays,
-    goalType: challenge.goalType,
-    targetValue: challenge.targetValue,
-    dailyMinimum: challenge.dailyMinimum,
-    dailyMaximum: challenge.dailyMaximum,
-    randomSeed: challenge.randomSeed,
-  })
-  const todayPlan = plan[dayIndex]!
-
-  const qualifyingTotal = findQualifyingTotal(
-    activities,
-    todayIso,
-    challenge.goalType,
-    todayPlan.value,
-  )
-  if (qualifyingTotal === null) return
-
-  await resultRef.set({
-    challengeId: challengeDoc.id,
-    userId: connection.userId,
+  await syncDayFromStrava(
+    connectionId,
+    connection,
+    {
+      id: challengeDoc.id,
+      ownerId: connection.userId,
+      durationDays: challenge.durationDays,
+      goalType: challenge.goalType,
+      targetValue: challenge.targetValue,
+      dailyMinimum: challenge.dailyMinimum,
+      dailyMaximum: challenge.dailyMaximum,
+      randomSeed: challenge.randomSeed,
+    },
     dayIndex,
-    date: todayIso,
-    status: 'completed',
-    pointsAwarded: pointsForDay(todayPlan.type),
-    completedAt: FieldValue.serverTimestamp(),
-    source: 'strava',
-  })
+    todayIso,
+  )
 }
 
 export default async function handler(

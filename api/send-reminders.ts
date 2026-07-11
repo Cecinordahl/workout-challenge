@@ -26,6 +26,8 @@ interface UserDoc {
     reminderTime: string
     tomorrowWorkoutReady: boolean
     streakReminder: boolean
+    /** Absent for user docs written before this setting existed — treat as enabled. */
+    missedDayCheck?: boolean
   }
 }
 
@@ -42,7 +44,10 @@ interface DailyResultDoc {
 }
 
 type NotificationType =
-  'dailyReminder' | 'tomorrowWorkoutReady' | 'streakReminder'
+  | 'dailyReminder'
+  | 'tomorrowWorkoutReady'
+  | 'streakReminder'
+  | 'missedDayCheck'
 
 async function sendPush(
   db: Firestore,
@@ -188,6 +193,24 @@ async function processChallenge(
       todayIso,
       "Tomorrow's workout is ready",
       `Your next day in "${challenge.title}" is ready whenever you are.`,
+    )
+  }
+
+  const yesterdayDayIndex = dayIndex - 1
+  const missedDayCheckEnabled = user.notificationSettings.missedDayCheck ?? true
+  if (
+    yesterdayDayIndex >= 0 &&
+    !resultsByDay.has(yesterdayDayIndex) &&
+    missedDayCheckEnabled
+  ) {
+    await notify(
+      db,
+      challenge.ownerId,
+      tokens,
+      'missedDayCheck',
+      todayIso,
+      "Didn't see a workout logged",
+      `We didn't see yesterday's workout logged in "${challenge.title}". Open the app to confirm you skipped it, log it manually, or sync Strava.`,
     )
   }
 }

@@ -40,6 +40,7 @@ export const UserProfileService = {
         reminderTime: '18:00',
         tomorrowWorkoutReady: true,
         streakReminder: true,
+        missedDayCheck: true,
       },
       fcmTokens: [],
     })

@@ -139,6 +139,17 @@ export function NotificationsPage() {
               }
             />
           </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="missedDayCheck">Check in on unlogged days</Label>
+            <Switch
+              id="missedDayCheck"
+              checked={profile.notificationSettings.missedDayCheck}
+              onCheckedChange={(checked) =>
+                updateSetting('missedDayCheck', checked)
+              }
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
