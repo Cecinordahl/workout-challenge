@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { DailyPlan } from '@/features/challenge/engine/types'
-import type {
-  StravaSyncFailureReason,
-  StravaSyncResult,
+import {
+  STRAVA_SYNC_FAILURE_MESSAGE,
+  type StravaSyncResult,
 } from '@/features/integrations/services/StravaService'
 import type { GoalType } from '@/types/challenge'
 import { formatGoalValue } from '@/utils/format'
@@ -21,12 +21,6 @@ interface MissedDayBannerProps {
 }
 
 type Action = 'skip' | 'log' | 'strava'
-
-const SYNC_FAILURE_MESSAGE: Record<StravaSyncFailureReason, string> = {
-  not_connected: "You're not connected to Strava — connect it from Account first.",
-  already_logged: 'That day already has a result.',
-  no_activity_found: "No matching Strava activity found for that day.",
-}
 
 export function MissedDayBanner({
   date,
@@ -64,7 +58,8 @@ export function MissedDayBanner({
     setSyncMessage(null)
     try {
       const result = await onSyncStrava()
-      if (!result.synced) setSyncMessage(SYNC_FAILURE_MESSAGE[result.reason])
+      if (!result.synced)
+        setSyncMessage(STRAVA_SYNC_FAILURE_MESSAGE[result.reason])
     } catch {
       setSyncMessage('Failed to sync with Strava — try again.')
     } finally {

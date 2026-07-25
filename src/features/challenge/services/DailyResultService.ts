@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   onSnapshot,
@@ -79,6 +80,12 @@ export const DailyResultService = {
     date: string,
   ): Promise<void> {
     await writeResult(challengeId, userId, dayIndex, date, 'skipped', 0)
+  },
+
+  /** Removes a day's result entirely, e.g. to undo an accidental "Complete" click. */
+  async undoDay(challengeId: string, dayIndex: number): Promise<void> {
+    const ref = doc(db, 'dailyResults', dailyResultDocId(challengeId, dayIndex))
+    await deleteDoc(ref)
   },
 
   subscribeToResults(

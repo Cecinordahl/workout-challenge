@@ -14,6 +14,15 @@ export type StravaSyncResult =
   | { synced: true }
   | { synced: false; reason: StravaSyncFailureReason }
 
+export const STRAVA_SYNC_FAILURE_MESSAGE: Record<
+  StravaSyncFailureReason,
+  string
+> = {
+  not_connected: "You're not connected to Strava — connect it from Account first.",
+  already_logged: 'That day already has a result.',
+  no_activity_found: 'No matching Strava activity found for that day.',
+}
+
 const STRAVA_OAUTH_AUTHORIZE_URL = 'https://www.strava.com/oauth/authorize'
 
 async function authorizedFetch(path: string, init?: RequestInit) {

@@ -16,8 +16,13 @@ service cloud.firestore {
     match /dailyResults/{resultId} {
       allow read: if request.auth != null
         && request.auth.uid == resource.data.userId;
-      allow write: if request.auth != null
+      allow create, update: if request.auth != null
         && request.auth.uid == request.resource.data.userId;
+      // Delete has no request.resource (no incoming data), so it must check
+      // the existing doc's owner instead — lets a user undo their own
+      // accidental "Complete" click.
+      allow delete: if request.auth != null
+        && request.auth.uid == resource.data.userId;
     }
 
     match /teams/{teamId} {

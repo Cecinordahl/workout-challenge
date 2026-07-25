@@ -4,6 +4,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { DailyPlan } from '@/features/challenge/engine/types'
+import {
+  STRAVA_SYNC_FAILURE_MESSAGE,
+  type StravaSyncResult,
+} from '@/features/integrations/services/StravaService'
 import type { DailyResult } from '@/types/dailyResult'
 import type { GoalType } from '@/types/challenge'
 import { formatGoalValue } from '@/utils/format'
@@ -14,6 +18,8 @@ const DAY_TYPE_LABEL: Record<DailyPlan['type'], string> = {
   normal: 'Today',
 }
 
+type Action = 'complete' | 'skip' | 'strava' | 'undo'
+
 interface TodayWorkoutCardProps {
   plan: DailyPlan
   goalType: GoalType
@@ -21,6 +27,8 @@ interface TodayWorkoutCardProps {
   skipsRemaining: number
   onComplete: () => Promise<void>
   onSkip: () => Promise<void>
+  onUndo: () => Promise<void>
+  onSyncStrava: () => Promise<StravaSyncResult>
 }
 
 export function TodayWorkoutCard({
@@ -30,26 +38,56 @@ export function TodayWorkoutCard({
   skipsRemaining,
   onComplete,
   onSkip,
+  onUndo,
+  onSyncStrava,
 }: TodayWorkoutCardProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [pendingAction, setPendingAction] = useState<Action | null>(null)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
+  const isSubmitting = pendingAction !== null
 
   async function handleComplete() {
-    setIsSubmitting(true)
+    setPendingAction('complete')
     try {
       await onComplete()
     } finally {
-      setIsSubmitting(false)
+      setPendingAction(null)
     }
   }
 
   async function handleSkip() {
-    setIsSubmitting(true)
+    setPendingAction('skip')
     try {
       await onSkip()
     } finally {
-      setIsSubmitting(false)
+      setPendingAction(null)
     }
   }
+
+  async function handleUndo() {
+    setPendingAction('undo')
+    try {
+      await onUndo()
+    } finally {
+      setPendingAction(null)
+    }
+  }
+
+  async function handleSyncStrava() {
+    setPendingAction('strava')
+    setSyncMessage(null)
+    try {
+      const result = await onSyncStrava()
+      if (!result.synced)
+        setSyncMessage(STRAVA_SYNC_FAILURE_MESSAGE[result.reason])
+    } catch {
+      setSyncMessage('Failed to sync with Strava — try again.')
+    } finally {
+      setPendingAction(null)
+    }
+  }
+
+  const canUndo =
+    result?.status === 'completed' && result.source !== 'strava'
 
   return (
     <Card>
@@ -72,6 +110,7 @@ export function TodayWorkoutCard({
           {result ? (
             <motion.div
               key="result"
+              className="space-y-2"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.15 }}
@@ -87,34 +126,63 @@ export function TodayWorkoutCard({
                     : 'Completed'
                   : 'Skipped'}
               </Badge>
+              {canUndo && (
+                <div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={isSubmitting}
+                    onClick={() => void handleUndo()}
+                  >
+                    {pendingAction === 'undo'
+                      ? 'Undoing…'
+                      : 'Not done yet — undo'}
+                  </Button>
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
               key="actions"
-              className="flex gap-2"
+              className="space-y-2"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <Button
-                className="flex-1"
-                disabled={isSubmitting}
-                onClick={() => void handleComplete()}
-              >
-                Complete
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  disabled={isSubmitting}
+                  onClick={() => void handleComplete()}
+                >
+                  Complete
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={isSubmitting || skipsRemaining <= 0}
+                  onClick={() => void handleSkip()}
+                >
+                  Skip{' '}
+                  {skipsRemaining <= 0
+                    ? '(none left)'
+                    : `(${skipsRemaining} left)`}
+                </Button>
+              </div>
               <Button
                 variant="outline"
-                className="flex-1"
-                disabled={isSubmitting || skipsRemaining <= 0}
-                onClick={() => void handleSkip()}
+                className="w-full"
+                disabled={isSubmitting}
+                onClick={() => void handleSyncStrava()}
               >
-                Skip{' '}
-                {skipsRemaining <= 0
-                  ? '(none left)'
-                  : `(${skipsRemaining} left)`}
+                {pendingAction === 'strava'
+                  ? 'Checking Strava…'
+                  : "Already logged in Strava? Sync it"}
               </Button>
+              {syncMessage && (
+                <p className="text-muted-foreground text-xs">{syncMessage}</p>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

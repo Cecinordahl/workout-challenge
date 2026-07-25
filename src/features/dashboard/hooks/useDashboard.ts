@@ -88,6 +88,19 @@ export function useDashboard() {
     void TeamService.syncMyProgressToTeams(user.uid)
   }
 
+  async function undoToday(): Promise<void> {
+    if (!user || dayIndex === null) return
+    await DailyResultService.undoDay(challenge.id, dayIndex)
+    void TeamService.syncMyProgressToTeams(user.uid)
+  }
+
+  async function syncTodayWithStrava(): Promise<StravaSyncResult> {
+    if (!todayIso || dayIndex === null) return { synced: false, reason: 'already_logged' }
+    const result = await StravaService.syncDay(challenge.id, dayIndex, todayIso)
+    if (result.synced) void TeamService.syncMyProgressToTeams(user?.uid ?? '')
+    return result
+  }
+
   async function startNewChallenge(): Promise<void> {
     await ChallengeService.completeChallenge(challenge.id)
     void navigate('/challenge/new', { replace: true })
@@ -140,6 +153,8 @@ export function useDashboard() {
     skipsRemaining,
     completeToday,
     skipToday,
+    undoToday,
+    syncTodayWithStrava,
     startNewChallenge,
     missedYesterday,
     confirmYesterdaySkipped,

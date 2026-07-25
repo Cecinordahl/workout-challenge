@@ -22,6 +22,8 @@ export function DashboardPage() {
     skipsRemaining,
     completeToday,
     skipToday,
+    undoToday,
+    syncTodayWithStrava,
     startNewChallenge,
     missedYesterday,
     confirmYesterdaySkipped,
@@ -97,6 +99,8 @@ export function DashboardPage() {
             skipsRemaining={skipsRemaining}
             onComplete={completeToday}
             onSkip={skipToday}
+            onUndo={undoToday}
+            onSyncStrava={syncTodayWithStrava}
           />
         </FadeIn>
       )}
