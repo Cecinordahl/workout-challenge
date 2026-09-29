@@ -86,8 +86,11 @@ export function TodayWorkoutCard({
     }
   }
 
+  // Only today's result reaches this card, so undo is naturally limited to
+  // the current day — past skips/completions stay locked.
   const canUndo =
-    result?.status === 'completed' && result.source !== 'strava'
+    result?.status === 'skipped' ||
+    (result?.status === 'completed' && result.source !== 'strava')
 
   return (
     <Card>
@@ -136,7 +139,9 @@ export function TodayWorkoutCard({
                   >
                     {pendingAction === 'undo'
                       ? 'Undoing…'
-                      : 'Not done yet — undo'}
+                      : result.status === 'skipped'
+                        ? 'Skipped by mistake — undo'
+                        : 'Not done yet — undo'}
                   </Button>
                 </div>
               )}

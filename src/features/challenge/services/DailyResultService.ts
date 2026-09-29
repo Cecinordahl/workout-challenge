@@ -82,7 +82,7 @@ export const DailyResultService = {
     await writeResult(challengeId, userId, dayIndex, date, 'skipped', 0)
   },
 
-  /** Removes a day's result entirely, e.g. to undo an accidental "Complete" click. */
+  /** Removes a day's result entirely, e.g. to undo an accidental "Complete" or "Skip" click. */
   async undoDay(challengeId: string, dayIndex: number): Promise<void> {
     const ref = doc(db, 'dailyResults', dailyResultDocId(challengeId, dayIndex))
     await deleteDoc(ref)
