@@ -3,7 +3,9 @@ import type {
   Campaign,
   CampaignGoal,
   CampaignStatistic,
+  CampaignTrack,
 } from '@/features/meaningful/domain/types'
+import type { ActivityType } from '@/types/activity'
 import { daysBetweenIsoDates } from '@/utils/date'
 
 export interface ValidationResult {
@@ -93,9 +95,6 @@ function validateGoal(goal: CampaignGoal, result: ValidationResult): void {
   if (goal.goalType === 'activeDays' && goal.target > 31) {
     result.errors.push(`${where}: activeDays target cannot exceed 31`)
   }
-  if (goal.eligibleActivityTypes?.length === 0) {
-    result.errors.push(`${where}: eligibleActivityTypes override is empty`)
-  }
   if (isBlank(goal.badge.name))
     result.errors.push(`${where}: missing badge name`)
   if (isBlank(goal.symbolicExplanation)) {
@@ -103,7 +102,7 @@ function validateGoal(goal: CampaignGoal, result: ValidationResult): void {
   }
 }
 
-/** Each goal set (the defaults, or one statistic's own) needs exactly one goal per difficulty, ordered by target. */
+/** Each goal set (one statistic × track, or the track's defaults) needs exactly one goal per difficulty, ordered by target. */
 function validateGoalSet(
   label: string,
   goals: CampaignGoal[],
@@ -135,6 +134,38 @@ function validateGoalSet(
   }
 }
 
+function goalSetKey(statisticId: string | null, trackId: string): string {
+  return `${statisticId ?? ''}|${trackId}`
+}
+
+/** Tracks must not overlap, so an activity only ever counts toward one kind of goal. */
+function validateTracks(
+  tracks: CampaignTrack[],
+  result: ValidationResult,
+): void {
+  if (tracks.length === 0) result.errors.push('at least one track is required')
+  const trackIds = new Set<string>()
+  const trackByType = new Map<ActivityType, string>()
+  for (const track of tracks) {
+    if (trackIds.has(track.id)) {
+      result.errors.push(`duplicate track id "${track.id}"`)
+    }
+    trackIds.add(track.id)
+    if (track.activityTypes.length === 0) {
+      result.errors.push(`track "${track.id}": activityTypes must not be empty`)
+    }
+    for (const type of track.activityTypes) {
+      const owner = trackByType.get(type)
+      if (owner !== undefined && owner !== track.id) {
+        result.errors.push(
+          `activity type "${type}" is in both track "${owner}" and "${track.id}"`,
+        )
+      }
+      trackByType.set(type, track.id)
+    }
+  }
+}
+
 export const CampaignValidationService = {
   /**
    * Checks one campaign's configuration. Errors block publishing; warnings
@@ -154,9 +185,8 @@ export const CampaignValidationService = {
     if (!SLUG_PATTERN.test(campaign.slug)) {
       result.errors.push(`slug "${campaign.slug}" must be lowercase kebab-case`)
     }
-    if (campaign.eligibleActivityTypes.length === 0) {
-      result.errors.push('eligibleActivityTypes must not be empty')
-    }
+    validateTracks(campaign.tracks, result)
+    const trackIds = new Set(campaign.tracks.map((t) => t.id))
     for (const link of [...campaign.learnMore, ...campaign.supportResources]) {
       if (!isHttpsUrl(link.url)) {
         result.errors.push(`link "${link.label}" must be a valid https URL`)
@@ -191,13 +221,19 @@ export const CampaignValidationService = {
     }
 
     const goalIds = new Set<string>()
-    const goalsByStatistic = new Map<string | null, CampaignGoal[]>()
+    // Keyed by `${statisticId ?? ''}|${trackId}`.
+    const goalSets = new Map<string, CampaignGoal[]>()
     for (const goal of campaign.goals) {
       if (goalIds.has(goal.id))
         result.errors.push(`duplicate goal id "${goal.id}"`)
       goalIds.add(goal.id)
       validateGoal(goal, result)
 
+      if (!trackIds.has(goal.trackId)) {
+        result.errors.push(
+          `goal "${goal.id}": unknown trackId "${goal.trackId}"`,
+        )
+      }
       if (goal.statisticId !== null) {
         const stat = statsById.get(goal.statisticId)
         if (!stat) {
@@ -210,28 +246,43 @@ export const CampaignValidationService = {
           )
         }
       }
-      const set = goalsByStatistic.get(goal.statisticId) ?? []
+      const key = goalSetKey(goal.statisticId, goal.trackId)
+      const set = goalSets.get(key) ?? []
       set.push(goal)
-      goalsByStatistic.set(goal.statisticId, set)
+      goalSets.set(key, set)
     }
 
-    const defaults = goalsByStatistic.get(null) ?? []
-    validateGoalSet('default goals', defaults, result)
+    // Every track needs its own default set, so any statistic can fall back to it.
+    for (const track of campaign.tracks) {
+      validateGoalSet(
+        `default goals for track "${track.id}"`,
+        goalSets.get(goalSetKey(null, track.id)) ?? [],
+        result,
+      )
+    }
 
-    for (const [statisticId, goals] of goalsByStatistic) {
-      if (statisticId === null) continue
-      validateGoalSet(`goals for "${statisticId}"`, goals, result)
+    for (const goals of goalSets.values()) {
+      const [first] = goals
+      if (!first || first.statisticId === null) continue
+      validateGoalSet(
+        `goals for "${first.statisticId}" on track "${first.trackId}"`,
+        goals,
+        result,
+      )
 
-      // A statistic-specific set must not offer an easier route to the same badge tier.
+      // A statistic-specific set must never be an easier route to the same
+      // badge tier: a Gold badge always means the track's Gold-level effort.
+      const defaults = goalSets.get(goalSetKey(null, first.trackId)) ?? []
       for (const goal of goals) {
-        const fallback = defaults.find((d) => d.difficulty === goal.difficulty)
-        if (
-          fallback &&
-          fallback.goalType === goal.goalType &&
-          goal.target < fallback.target
-        ) {
+        const standard = defaults.find((d) => d.difficulty === goal.difficulty)
+        if (!standard) continue
+        if (standard.goalType !== goal.goalType) {
           result.warnings.push(
-            `goal "${goal.id}" is easier than the default ${goal.difficulty} goal`,
+            `goal "${goal.id}" uses a different goal type than the default ${goal.difficulty} goal — review its difficulty by hand`,
+          )
+        } else if (goal.target < standard.target) {
+          result.errors.push(
+            `goal "${goal.id}" is easier than the default ${goal.difficulty} goal on track "${goal.trackId}"`,
           )
         }
       }

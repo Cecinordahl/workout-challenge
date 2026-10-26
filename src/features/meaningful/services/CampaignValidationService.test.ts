@@ -136,10 +136,10 @@ describe('CampaignValidationService.validateCampaign', () => {
       ],
     })
     expect(errors).toContain(
-      'default goals: expected exactly one EASY goal, found 2',
+      'default goals for track "on-foot": expected exactly one EASY goal, found 2',
     )
     expect(errors).toContain(
-      'default goals: expected exactly one MEDIUM goal, found 0',
+      'default goals for track "on-foot": expected exactly one MEDIUM goal, found 0',
     )
   })
 
@@ -152,7 +152,7 @@ describe('CampaignValidationService.validateCampaign', () => {
       ],
     })
     expect(errors).toContain(
-      'default goals: MEDIUM target must be greater than EASY',
+      'default goals for track "on-foot": MEDIUM target must be greater than EASY',
     )
   })
 
@@ -227,7 +227,7 @@ describe('CampaignValidationService.validateCampaign', () => {
     )
   })
 
-  it('warns when a statistic-specific goal is easier than the default for its tier', () => {
+  it('rejects a statistic-specific goal easier than the default for its tier', () => {
     const { warnings, errors } = validate({
       goals: [
         ...makeDefaultGoals(),
@@ -251,10 +251,76 @@ describe('CampaignValidationService.validateCampaign', () => {
         }),
       ],
     })
+    expect(errors).toEqual([
+      'goal "s-h" is easier than the default HARD goal on track "on-foot"',
+    ])
+    expect(warnings).toEqual([])
+  })
+
+  it('flags a statistic-specific goal of a different type for manual review', () => {
+    const { warnings, errors } = validate({
+      goals: [
+        ...makeDefaultGoals(),
+        makeGoal({
+          id: 's-e',
+          statisticId: 'stat-2',
+          difficulty: 'EASY',
+          target: 10,
+        }),
+        makeGoal({
+          id: 's-m',
+          statisticId: 'stat-2',
+          difficulty: 'MEDIUM',
+          goalType: 'singleActivityDistance',
+          target: 6,
+        }),
+        makeGoal({
+          id: 's-h',
+          statisticId: 'stat-2',
+          difficulty: 'HARD',
+          target: 154,
+        }),
+      ],
+    })
     expect(errors).toEqual([])
     expect(warnings).toEqual([
-      'goal "s-h" is easier than the default HARD goal',
+      'goal "s-m" uses a different goal type than the default MEDIUM goal — review its difficulty by hand',
     ])
+  })
+
+  it('requires default goals for every track', () => {
+    const { errors } = validate({
+      tracks: [
+        { id: 'on-foot', label: 'On foot', activityTypes: ['run', 'walk'] },
+        { id: 'cycling', label: 'Cycling', activityTypes: ['ride'] },
+      ],
+    })
+    expect(errors).toContain(
+      'default goals for track "cycling": expected exactly one EASY goal, found 0',
+    )
+  })
+
+  it('rejects an activity type that belongs to two tracks', () => {
+    const { errors } = validate({
+      tracks: [
+        { id: 'on-foot', label: 'On foot', activityTypes: ['run', 'walk'] },
+        { id: 'mixed', label: 'Mixed', activityTypes: ['run', 'ride'] },
+      ],
+    })
+    expect(errors).toContain(
+      'activity type "run" is in both track "on-foot" and "mixed"',
+    )
+  })
+
+  it('rejects goals on an unknown track and campaigns without tracks', () => {
+    expect(
+      validate({
+        goals: [...makeDefaultGoals(), makeGoal({ id: 'x', trackId: 'nope' })],
+      }).errors,
+    ).toContain('goal "x": unknown trackId "nope"')
+    expect(validate({ tracks: [] }).errors).toContain(
+      'at least one track is required',
+    )
   })
 
   it('rejects non-https links', () => {

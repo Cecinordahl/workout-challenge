@@ -67,7 +67,7 @@ describe('CampaignCatalogService.getGoalsForStatistic', () => {
       id: 's-easy',
       statisticId: 'stat-2',
       difficulty: 'EASY',
-      target: 6,
+      target: 10,
     }),
     makeGoal({
       id: 's-medium',
@@ -77,31 +77,64 @@ describe('CampaignCatalogService.getGoalsForStatistic', () => {
       target: 6,
     }),
   ]
+  const cyclingGoals = [
+    makeGoal({
+      id: 'c-easy',
+      trackId: 'cycling',
+      difficulty: 'EASY',
+      target: 30,
+    }),
+    makeGoal({
+      id: 'c-medium',
+      trackId: 'cycling',
+      difficulty: 'MEDIUM',
+      target: 90,
+    }),
+    makeGoal({
+      id: 'c-hard',
+      trackId: 'cycling',
+      difficulty: 'HARD',
+      target: 180,
+    }),
+  ]
   const campaign = makeCampaign({
-    goals: [...makeDefaultGoals(), ...specificGoals],
+    tracks: [
+      { id: 'on-foot', label: 'On foot', activityTypes: ['run', 'walk'] },
+      { id: 'cycling', label: 'Cycling', activityTypes: ['ride'] },
+    ],
+    goals: [...makeDefaultGoals(), ...specificGoals, ...cyclingGoals],
   })
+
+  const ids = (statisticId: string | null, trackId: string) =>
+    CampaignCatalogService.getGoalsForStatistic(
+      campaign,
+      statisticId,
+      trackId,
+    ).map((g) => g.id)
 
   it("returns a statistic's own goals, ordered Easy → Hard", () => {
-    expect(
-      CampaignCatalogService.getGoalsForStatistic(campaign, 'stat-2').map(
-        (g) => g.id,
-      ),
-    ).toEqual(['s-easy', 's-medium', 's-hard'])
+    expect(ids('stat-2', 'on-foot')).toEqual(['s-easy', 's-medium', 's-hard'])
   })
 
-  it('falls back to the default goals for a statistic without its own', () => {
-    expect(
-      CampaignCatalogService.getGoalsForStatistic(campaign, 'stat-1').map(
-        (g) => g.id,
-      ),
-    ).toEqual(['goal-easy', 'goal-medium', 'goal-hard'])
+  it('falls back to the track defaults for a statistic without its own', () => {
+    expect(ids('stat-1', 'on-foot')).toEqual([
+      'goal-easy',
+      'goal-medium',
+      'goal-hard',
+    ])
   })
 
-  it('returns the default goals when no statistic is selected', () => {
-    expect(
-      CampaignCatalogService.getGoalsForStatistic(campaign, null).map(
-        (g) => g.difficulty,
-      ),
-    ).toEqual(['EASY', 'MEDIUM', 'HARD'])
+  it('returns the track defaults when no statistic is selected', () => {
+    expect(ids(null, 'on-foot')).toEqual([
+      'goal-easy',
+      'goal-medium',
+      'goal-hard',
+    ])
+  })
+
+  it('only returns goals for the chosen track', () => {
+    expect(ids(null, 'cycling')).toEqual(['c-easy', 'c-medium', 'c-hard'])
+    // stat-2 has no cycling set of its own, so cycling falls back to cycling defaults.
+    expect(ids('stat-2', 'cycling')).toEqual(['c-easy', 'c-medium', 'c-hard'])
   })
 })

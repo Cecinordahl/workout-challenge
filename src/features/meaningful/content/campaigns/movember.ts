@@ -15,7 +15,14 @@ export const movemberCampaign: Campaign = {
   description:
     "November is Movember: a month to talk openly about men's mental health, suicide prevention, and prostate and testicular cancer. Men on average die younger than women, and many of the causes are preventable. Moving together is a way to start conversations and look out for each other.",
   icon: 'HeartHandshake',
-  eligibleActivityTypes: ['run', 'walk', 'hike', 'swim', 'wheelchair'],
+  tracks: [
+    {
+      id: 'on-foot',
+      label: 'Run, walk or roll',
+      activityTypes: ['run', 'walk', 'hike', 'wheelchair'],
+    },
+    { id: 'cycling', label: 'Cycling', activityTypes: ['ride'] },
+  ],
   status: 'published',
   featuredStatisticId: 'nov-60-men-per-hour',
   statistics: [
@@ -173,6 +180,7 @@ export const movemberCampaign: Campaign = {
     {
       id: 'nov-easy',
       statisticId: null,
+      trackId: 'on-foot',
       difficulty: 'EASY',
       goalType: 'totalDistance',
       target: 10,
@@ -183,6 +191,7 @@ export const movemberCampaign: Campaign = {
     {
       id: 'nov-medium',
       statisticId: null,
+      trackId: 'on-foot',
       difficulty: 'MEDIUM',
       goalType: 'totalDistance',
       target: 30,
@@ -192,12 +201,45 @@ export const movemberCampaign: Campaign = {
     {
       id: 'nov-hard',
       statisticId: null,
+      trackId: 'on-foot',
       difficulty: 'HARD',
       goalType: 'totalDistance',
       target: 60,
       symbolicExplanation:
         "Movember's full 60 km, one kilometre for each of the 60 men lost to suicide every hour. A symbol of remembrance, not a measure of lives saved.",
       badge: { name: 'Movember 60' },
+    },
+    {
+      id: 'nov-cycling-easy',
+      statisticId: null,
+      trackId: 'cycling',
+      difficulty: 'EASY',
+      goalType: 'totalDistance',
+      target: 30,
+      symbolicExplanation: 'A first step on two wheels: 30 km across November.',
+      badge: { name: 'Movember Rider' },
+    },
+    {
+      id: 'nov-cycling-medium',
+      statisticId: null,
+      trackId: 'cycling',
+      difficulty: 'MEDIUM',
+      goalType: 'totalDistance',
+      target: 90,
+      symbolicExplanation:
+        'Three times the on-foot Silver distance, to match the effort of cycling.',
+      badge: { name: 'Movember Cyclist' },
+    },
+    {
+      id: 'nov-cycling-hard',
+      statisticId: null,
+      trackId: 'cycling',
+      difficulty: 'HARD',
+      goalType: 'totalDistance',
+      target: 180,
+      symbolicExplanation:
+        'Three times the on-foot Gold distance, so a cycling Gold takes comparable effort.',
+      badge: { name: 'Movember 180' },
     },
   ],
   learnMore: [

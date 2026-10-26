@@ -17,7 +17,14 @@ export const hivAwarenessCampaign: Campaign = {
   description:
     'December opens with World AIDS Day on 1 December. HIV is now a treatable condition: with effective treatment, people living with HIV can live long, healthy lives. Stigma and unequal access to testing and treatment remain some of the biggest barriers.',
   icon: 'Ribbon',
-  eligibleActivityTypes: ['run', 'walk', 'hike', 'swim', 'wheelchair'],
+  tracks: [
+    {
+      id: 'on-foot',
+      label: 'Run, walk or roll',
+      activityTypes: ['run', 'walk', 'hike', 'wheelchair'],
+    },
+    { id: 'cycling', label: 'Cycling', activityTypes: ['ride'] },
+  ],
   status: 'published',
   featuredStatisticId: 'dec-41m-living-with-hiv',
   statistics: [
@@ -180,6 +187,7 @@ export const hivAwarenessCampaign: Campaign = {
     {
       id: 'dec-easy',
       statisticId: null,
+      trackId: 'on-foot',
       difficulty: 'EASY',
       goalType: 'totalDistance',
       target: 10,
@@ -190,6 +198,7 @@ export const hivAwarenessCampaign: Campaign = {
     {
       id: 'dec-medium',
       statisticId: null,
+      trackId: 'on-foot',
       difficulty: 'MEDIUM',
       goalType: 'totalDistance',
       target: 31,
@@ -200,12 +209,45 @@ export const hivAwarenessCampaign: Campaign = {
     {
       id: 'dec-hard',
       statisticId: null,
+      trackId: 'on-foot',
       difficulty: 'HARD',
       goalType: 'totalDistance',
       target: 60,
       symbolicExplanation:
         'An ambitious 60 km — about 2 km for every day of the month.',
       badge: { name: 'Red Ribbon 60' },
+    },
+    {
+      id: 'dec-cycling-easy',
+      statisticId: null,
+      trackId: 'cycling',
+      difficulty: 'EASY',
+      goalType: 'totalDistance',
+      target: 30,
+      symbolicExplanation: 'A first step on two wheels: 30 km across December.',
+      badge: { name: 'Red Ribbon Rider' },
+    },
+    {
+      id: 'dec-cycling-medium',
+      statisticId: null,
+      trackId: 'cycling',
+      difficulty: 'MEDIUM',
+      goalType: 'totalDistance',
+      target: 93,
+      symbolicExplanation:
+        'Three times the on-foot Silver distance, to match the effort of cycling.',
+      badge: { name: 'Red Ribbon Cyclist' },
+    },
+    {
+      id: 'dec-cycling-hard',
+      statisticId: null,
+      trackId: 'cycling',
+      difficulty: 'HARD',
+      goalType: 'totalDistance',
+      target: 180,
+      symbolicExplanation:
+        'Three times the on-foot Gold distance, so a cycling Gold takes comparable effort.',
+      badge: { name: 'Red Ribbon 180' },
     },
   ],
   learnMore: [

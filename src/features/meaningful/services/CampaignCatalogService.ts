@@ -4,6 +4,7 @@ import type {
   Campaign,
   CampaignGoal,
   CampaignStatistic,
+  CampaignTrack,
 } from '@/features/meaningful/domain/types'
 
 /** Strips draft statistics, and any goal tied to one, so they can never reach the UI. */
@@ -62,21 +63,31 @@ export const CampaignCatalogService = {
     )
   },
 
+  getTrack(campaign: Campaign, trackId: string): CampaignTrack | null {
+    return campaign.tracks.find((t) => t.id === trackId) ?? null
+  },
+
+  getGoal(campaign: Campaign, goalId: string): CampaignGoal | null {
+    return campaign.goals.find((g) => g.id === goalId) ?? null
+  },
+
   /**
-   * The Easy/Medium/Hard goals offered after picking a statistic: its own
-   * set when it has one, otherwise the campaign's default set.
+   * The Easy/Medium/Hard goals offered on a track after picking a
+   * statistic: its own set when it has one, otherwise the track's defaults.
    */
   getGoalsForStatistic(
     campaign: Campaign,
     statisticId: string | null,
+    trackId: string,
   ): CampaignGoal[] {
-    const specific = campaign.goals.filter(
+    const onTrack = campaign.goals.filter((g) => g.trackId === trackId)
+    const specific = onTrack.filter(
       (g) => statisticId !== null && g.statisticId === statisticId,
     )
     const goals =
       specific.length > 0
         ? specific
-        : campaign.goals.filter((g) => g.statisticId === null)
+        : onTrack.filter((g) => g.statisticId === null)
     return [...goals].sort(byDifficulty)
   },
 }

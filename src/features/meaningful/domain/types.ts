@@ -58,10 +58,21 @@ export interface CampaignGoal {
   goalType: GoalType
   /** km for distance goals, days for activeDays, minutes for totalDuration. */
   target: number
-  /** Overrides the campaign's eligible types for this goal only. */
-  eligibleActivityTypes?: ActivityType[]
+  /** The track whose activity types count toward this goal. */
+  trackId: string
   symbolicExplanation: string
   badge: { name: string }
+}
+
+/**
+ * A way of taking part (e.g. on foot, or cycling). Users pick exactly one,
+ * and only activities of its types count — so a run never counts toward a
+ * cycling goal, and each track carries targets of comparable effort.
+ */
+export interface CampaignTrack {
+  id: string
+  label: string
+  activityTypes: ActivityType[]
 }
 
 export interface Campaign {
@@ -75,7 +86,7 @@ export interface Campaign {
   description: string
   /** lucide-react icon name used as the campaign illustration. */
   icon: string
-  eligibleActivityTypes: ActivityType[]
+  tracks: CampaignTrack[]
   status: CampaignStatus
   featuredStatisticId: string
   statistics: CampaignStatistic[]
@@ -84,4 +95,41 @@ export interface Campaign {
   supportResources: SourceLink[]
   /** Short note on the symbolic link between movement and the cause. */
   symbolicNote: string
+}
+
+export type ParticipationStatus = 'active' | 'completed'
+
+export interface CampaignSelection {
+  trackId: string
+  /** Null when the user picked the campaign's goals without choosing a statistic. */
+  statisticId: string | null
+  goalId: string
+}
+
+export interface CampaignParticipation extends CampaignSelection {
+  /** Deterministic: `${userId}_${campaignId}_${year}`. */
+  id: string
+  userId: string
+  campaignId: string
+  /** The calendar year of the campaign month this participation covers. */
+  year: number
+  /** ISO datetime the selection was locked (first counted activity), or null while still editable. */
+  lockedAt: string | null
+  status: ParticipationStatus
+}
+
+export interface EarnedBadge {
+  /** Deterministic: `${userId}_${campaignId}_${year}` — one badge per campaign per year. */
+  id: string
+  userId: string
+  campaignId: string
+  year: number
+  trackId: string
+  statisticId: string | null
+  goalId: string
+  difficulty: Difficulty
+  badgeName: string
+  /** Local date (YYYY-MM-DD) the target was reached. */
+  completedOn: string
+  qualifyingActivityIds: string[]
 }

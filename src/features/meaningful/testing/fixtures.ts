@@ -1,3 +1,4 @@
+import type { Activity } from '@/types/activity'
 import type {
   Campaign,
   CampaignGoal,
@@ -30,6 +31,7 @@ export function makeGoal(overrides: Partial<CampaignGoal> = {}): CampaignGoal {
   return {
     id: 'goal-easy',
     statisticId: null,
+    trackId: 'on-foot',
     difficulty: 'EASY',
     goalType: 'totalDistance',
     target: 10,
@@ -58,7 +60,9 @@ export function makeCampaign(overrides: Partial<Campaign> = {}): Campaign {
     summary: 'Summary.',
     description: 'Description.',
     icon: 'Heart',
-    eligibleActivityTypes: ['run', 'walk'],
+    tracks: [
+      { id: 'on-foot', label: 'On foot', activityTypes: ['run', 'walk'] },
+    ],
     status: 'published',
     featuredStatisticId: 'stat-1',
     statistics: [1, 2, 3, 4, 5].map((n) => makeStatistic({ id: `stat-${n}` })),
@@ -66,6 +70,25 @@ export function makeCampaign(overrides: Partial<Campaign> = {}): Campaign {
     learnMore: [{ label: 'Source', url: 'https://example.org' }],
     supportResources: [],
     symbolicNote: 'Symbolic note.',
+    ...overrides,
+  }
+}
+
+let activityCounter = 0
+
+/** A run on 10 November 2026 unless overridden; `localDate` follows `startLocal`. */
+export function makeActivity(overrides: Partial<Activity> = {}): Activity {
+  activityCounter += 1
+  const startLocal = overrides.startLocal ?? '2026-11-10T08:00:00'
+  return {
+    id: `activity-${activityCounter}`,
+    userId: 'user-1',
+    source: 'manual',
+    type: 'run',
+    distanceKm: 5,
+    durationMin: 30,
+    startLocal,
+    localDate: startLocal.slice(0, 10),
     ...overrides,
   }
 }
