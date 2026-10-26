@@ -103,6 +103,20 @@ service cloud.firestore {
         && resource.data.source == 'manual';
     }
 
+    // Meaningful Mode participations and badges are written only by our
+    // API routes (Admin SDK), which enforce selection locking and award
+    // badges from the activity ledger. Clients can only read their own,
+    // so a badge can never be self-awarded.
+    match /campaignParticipations/{participationId} {
+      allow read: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+    }
+
+    match /earnedBadges/{badgeId} {
+      allow read: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+    }
+
     match /fitnessConnections/{connectionId} {
       // Holds OAuth tokens for third-party fitness providers (Strava, etc).
       // Server-only: no client read/write at all — only our Vercel API

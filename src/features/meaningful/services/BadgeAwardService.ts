@@ -2,9 +2,9 @@ import type {
   Campaign,
   CampaignParticipation,
   EarnedBadge,
-} from '@/features/meaningful/domain/types'
-import { CampaignCatalogService } from './CampaignCatalogService'
-import type { GoalEvaluation } from './CampaignProgressService'
+} from '../domain/types.js'
+import { CampaignCatalogService } from './CampaignCatalogService.js'
+import type { GoalEvaluation } from './CampaignProgressService.js'
 
 export const BadgeAwardService = {
   /**

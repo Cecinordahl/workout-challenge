@@ -1,4 +1,4 @@
-import type { ActivityType } from '@/types/activity'
+import type { ActivityType } from '../../../types/activity.js'
 
 export type CampaignStatus = 'draft' | 'published'
 

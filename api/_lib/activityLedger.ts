@@ -7,25 +7,26 @@ function activities() {
   return db.collection('activities')
 }
 
-/** Writes (or overwrites) a Strava activity in the user's ledger. */
+/** Writes (or overwrites) a Strava activity in the user's ledger; returns its local date. */
 export async function upsertStravaActivity(
   userId: string,
   activity: StravaActivity,
-): Promise<void> {
+): Promise<string> {
+  const fields = toActivityFields(userId, activity)
   await activities()
     .doc(stravaActivityDocId(activity.id))
-    .set({
-      ...toActivityFields(userId, activity),
-      syncedAt: FieldValue.serverTimestamp(),
-    })
+    .set({ ...fields, syncedAt: FieldValue.serverTimestamp() })
+  return fields.localDate
 }
 
-/** Removes a Strava activity the athlete deleted — only if it's theirs. */
+/** Removes a Strava activity the athlete deleted — only if it's theirs. Returns the removed activity's local date. */
 export async function deleteStravaActivity(
   userId: string,
   stravaActivityId: number,
-): Promise<void> {
+): Promise<string | null> {
   const ref = activities().doc(stravaActivityDocId(stravaActivityId))
   const snap = await ref.get()
-  if (snap.exists && snap.get('userId') === userId) await ref.delete()
+  if (!snap.exists || snap.get('userId') !== userId) return null
+  await ref.delete()
+  return snap.get('localDate') as string
 }

@@ -1,11 +1,11 @@
-import { CAMPAIGNS } from '@/features/meaningful/content/campaigns'
-import { DIFFICULTIES } from '@/features/meaningful/domain/badgeTiers'
+import { CAMPAIGNS } from '../content/campaigns/index.js'
+import { DIFFICULTIES } from '../domain/badgeTiers.js'
 import type {
   Campaign,
   CampaignGoal,
   CampaignStatistic,
   CampaignTrack,
-} from '@/features/meaningful/domain/types'
+} from '../domain/types.js'
 
 /** Strips draft statistics, and any goal tied to one, so they can never reach the UI. */
 function toPublicView(campaign: Campaign): Campaign {
@@ -43,6 +43,15 @@ export const CampaignCatalogService = {
   ): Campaign | null {
     return (
       this.getPublishedCampaigns(catalogue).find((c) => c.slug === slug) ?? null
+    )
+  },
+
+  getCampaignById(
+    id: string,
+    catalogue: readonly Campaign[] = CAMPAIGNS,
+  ): Campaign | null {
+    return (
+      this.getPublishedCampaigns(catalogue).find((c) => c.id === id) ?? null
     )
   },
 

@@ -1,4 +1,4 @@
-import type { Campaign } from '@/features/meaningful/domain/types'
+import type { Campaign } from '../../domain/types.js'
 
 const UNAIDS_FACT_SHEET = 'https://www.unaids.org/en/resources/fact-sheet'
 const WHO_HIV_DATA =

@@ -1,12 +1,9 @@
-import type {
-  CampaignGoal,
-  CampaignTrack,
-} from '@/features/meaningful/domain/types'
-import type { Activity } from '@/types/activity'
+import type { CampaignGoal, CampaignTrack } from '../domain/types.js'
+import type { Activity } from '../../../types/activity.js'
 import {
   CampaignPeriodService,
   type CampaignPeriod,
-} from './CampaignPeriodService'
+} from './CampaignPeriodService.js'
 
 /** An activity shorter than this doesn't make a day "active". */
 export const ACTIVE_DAY_MIN_MINUTES = 10

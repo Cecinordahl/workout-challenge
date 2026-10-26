@@ -33,6 +33,14 @@
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "localDate", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "earnedBadges",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "completedOn", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -1,4 +1,4 @@
-import type { Campaign } from '@/features/meaningful/domain/types'
+import type { Campaign } from '../../domain/types.js'
 
 const WHO_SUICIDE_2021 = 'https://www.who.int/publications/i/item/9789240110069'
 const WHO_LIFE_EXPECTANCY_2019 =

@@ -9,6 +9,7 @@ import {
   upsertStravaActivity,
 } from './_lib/activityLedger.js'
 import { getActivity } from './_lib/strava.js'
+import { evaluateParticipationsForActivity } from './_lib/campaigns.js'
 import { syncDayFromStrava } from './_lib/stravaDaySync.js'
 import type { GoalType } from './_lib/engine/types.js'
 import { daysBetweenIsoDates, todayInTimezone } from './_lib/date.js'
@@ -78,8 +79,9 @@ async function processAthleteActivity(athleteId: string): Promise<void> {
 
 /**
  * Mirrors the activity into the user's ledger (every sport type, not just
- * runs) — the source of truth for Meaningful Mode campaign progress.
- * Independent of the daily-challenge sync below.
+ * runs) — the source of truth for Meaningful Mode campaign progress — then
+ * re-evaluates any campaign that month. Independent of the daily-challenge
+ * sync below.
  */
 async function syncActivityToLedger(
   athleteId: string,
@@ -90,13 +92,17 @@ async function syncActivityToLedger(
   if (!connectionEntry) return
   const { id: connectionId, data: connection } = connectionEntry
 
+  let localDate: string | null
   if (aspectType === 'delete') {
-    await deleteStravaActivity(connection.userId, activityId)
-    return
+    localDate = await deleteStravaActivity(connection.userId, activityId)
+  } else {
+    const accessToken = await getValidAccessToken(connectionId, connection)
+    const activity = await getActivity(accessToken, activityId)
+    localDate = await upsertStravaActivity(connection.userId, activity)
   }
-  const accessToken = await getValidAccessToken(connectionId, connection)
-  const activity = await getActivity(accessToken, activityId)
-  await upsertStravaActivity(connection.userId, activity)
+  if (localDate) {
+    await evaluateParticipationsForActivity(connection.userId, localDate)
+  }
 }
 
 export default async function handler(
