@@ -78,9 +78,7 @@ export async function syncDayFromStrava(
   // qualification, so this only needs to comfortably cover it regardless
   // of the athlete's timezone offset.
   const DAY_SECONDS = 86_400
-  const dateStartSeconds = Math.floor(
-    Date.parse(`${dateIso}T00:00:00Z`) / 1000,
-  )
+  const dateStartSeconds = Math.floor(Date.parse(`${dateIso}T00:00:00Z`) / 1000)
   const activities = await listActivities(
     accessToken,
     dateStartSeconds - DAY_SECONDS,

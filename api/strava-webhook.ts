@@ -1,6 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { db } from './_lib/firebaseAdmin.js'
-import { getConnectionByAthleteId } from './_lib/fitnessConnections.js'
+import {
+  getConnectionByAthleteId,
+  getValidAccessToken,
+} from './_lib/fitnessConnections.js'
+import {
+  deleteStravaActivity,
+  upsertStravaActivity,
+} from './_lib/activityLedger.js'
+import { getActivity } from './_lib/strava.js'
 import { syncDayFromStrava } from './_lib/stravaDaySync.js'
 import type { GoalType } from './_lib/engine/types.js'
 import { daysBetweenIsoDates, todayInTimezone } from './_lib/date.js'
@@ -68,6 +76,29 @@ async function processAthleteActivity(athleteId: string): Promise<void> {
   )
 }
 
+/**
+ * Mirrors the activity into the user's ledger (every sport type, not just
+ * runs) — the source of truth for Meaningful Mode campaign progress.
+ * Independent of the daily-challenge sync below.
+ */
+async function syncActivityToLedger(
+  athleteId: string,
+  aspectType: string,
+  activityId: number,
+): Promise<void> {
+  const connectionEntry = await getConnectionByAthleteId('strava', athleteId)
+  if (!connectionEntry) return
+  const { id: connectionId, data: connection } = connectionEntry
+
+  if (aspectType === 'delete') {
+    await deleteStravaActivity(connection.userId, activityId)
+    return
+  }
+  const accessToken = await getValidAccessToken(connectionId, connection)
+  const activity = await getActivity(accessToken, activityId)
+  await upsertStravaActivity(connection.userId, activity)
+}
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse,
@@ -91,7 +122,27 @@ export default async function handler(
   const event = req.body as {
     aspect_type?: string
     object_type?: string
+    object_id?: number
     owner_id?: number
+  }
+
+  if (
+    event.object_type === 'activity' &&
+    event.aspect_type !== undefined &&
+    event.object_id !== undefined &&
+    event.owner_id !== undefined
+  ) {
+    try {
+      await syncActivityToLedger(
+        String(event.owner_id),
+        event.aspect_type,
+        event.object_id,
+      )
+    } catch (error) {
+      // Same reasoning as below: never fail the webhook. A missed activity
+      // can be recovered with the import endpoint.
+      console.error('Failed to sync Strava activity to ledger', error)
+    }
   }
 
   if (

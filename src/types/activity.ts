@@ -10,6 +10,8 @@ export interface Activity {
   id: string
   userId: string
   source: ActivitySource
+  /** The provider's own ID (e.g. the Strava activity ID); absent for manual entries. */
+  externalId?: string
   type: ActivityType
   distanceKm: number
   durationMin: number

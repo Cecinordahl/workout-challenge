@@ -78,11 +78,14 @@ export async function listActivities(
   accessToken: string,
   afterEpochSeconds: number,
   beforeEpochSeconds: number,
+  page = 1,
+  perPage = 50,
 ): Promise<StravaActivity[]> {
   const params = new URLSearchParams({
     after: String(afterEpochSeconds),
     before: String(beforeEpochSeconds),
-    per_page: '50',
+    per_page: String(perPage),
+    page: String(page),
   })
   const res = await fetch(
     `${STRAVA_API_BASE}/athlete/activities?${params.toString()}`,
@@ -94,6 +97,19 @@ export async function listActivities(
     throw new Error(`Strava list activities failed: ${res.status}`)
   }
   return res.json() as Promise<StravaActivity[]>
+}
+
+export async function getActivity(
+  accessToken: string,
+  activityId: number,
+): Promise<StravaActivity> {
+  const res = await fetch(`${STRAVA_API_BASE}/activities/${activityId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!res.ok) {
+    throw new Error(`Strava get activity failed: ${res.status}`)
+  }
+  return res.json() as Promise<StravaActivity>
 }
 
 const RUN_TYPES = new Set(['Run', 'TrailRun', 'VirtualRun', 'Treadmill'])
