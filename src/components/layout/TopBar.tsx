@@ -39,6 +39,9 @@ export function TopBar() {
           <NavLink to="/teams" className={navLinkClassName}>
             Teams
           </NavLink>
+          <NavLink to="/causes" className={navLinkClassName}>
+            Causes
+          </NavLink>
           <NavLink to="/notifications" className={navLinkClassName}>
             Notifications
             {unreadCount > 0 && (

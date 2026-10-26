@@ -39,6 +39,10 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-tier-bronze: var(--tier-bronze);
+  --color-tier-silver: var(--tier-silver);
+  --color-tier-gold: var(--tier-gold);
+  --color-tier-foreground: var(--tier-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -81,6 +85,12 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Meaningful Mode badge tiers. Always paired with a text label, so
+     colour never carries the difficulty alone. */
+  --tier-bronze: oklch(0.7 0.11 55);
+  --tier-silver: oklch(0.83 0.01 250);
+  --tier-gold: oklch(0.83 0.14 85);
+  --tier-foreground: oklch(0.2 0 0);
 }
 
 .dark {
@@ -115,6 +125,10 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --tier-bronze: oklch(0.66 0.1 55);
+  --tier-silver: oklch(0.78 0.01 250);
+  --tier-gold: oklch(0.8 0.13 85);
+  --tier-foreground: oklch(0.18 0 0);
 }
 
 @layer base {

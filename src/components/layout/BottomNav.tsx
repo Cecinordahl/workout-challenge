@@ -1,4 +1,4 @@
-import { Bell, History, Home, Users } from 'lucide-react'
+import { Bell, HeartHandshake, History, Home, Users } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -28,6 +28,10 @@ export function BottomNav() {
       <NavLink to="/teams" className={navItemClassName}>
         <Users className="size-5" />
         Teams
+      </NavLink>
+      <NavLink to="/causes" className={navItemClassName}>
+        <HeartHandshake className="size-5" />
+        Causes
       </NavLink>
       <NavLink
         to="/notifications"
