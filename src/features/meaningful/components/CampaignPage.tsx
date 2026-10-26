@@ -2,7 +2,7 @@ import { ArrowLeft, ExternalLink, Info, LifeBuoy, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
@@ -129,6 +129,13 @@ function JoinedSummary({
             aria-label="Campaign progress"
           />
         </div>
+
+        <Link
+          to={`/causes/${campaign.slug}/progress`}
+          className={cn(buttonVariants(), 'w-full')}
+        >
+          {completed ? 'View activities' : 'Progress & log activities'}
+        </Link>
 
         {completed ? null : participation.lockedAt ? (
           <p className="text-muted-foreground flex items-start gap-2 text-xs">

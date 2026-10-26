@@ -73,9 +73,17 @@ export function MeaningfulPage() {
   return (
     <div className="mx-auto max-w-md space-y-4 p-6">
       <div className="space-y-1">
-        <h1 className="text-lg font-semibold tracking-tight">
-          Meaningful Mode
-        </h1>
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-lg font-semibold tracking-tight">
+            Meaningful Mode
+          </h1>
+          <Link
+            to="/badges"
+            className="text-sm font-medium underline underline-offset-4"
+          >
+            My badges
+          </Link>
+        </div>
         <p className="text-muted-foreground text-sm">
           Each month focuses on a real-world cause. Learn the facts, pick one
           that matters to you, and set a movement goal in its honour.

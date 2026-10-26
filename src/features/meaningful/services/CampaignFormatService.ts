@@ -126,6 +126,13 @@ export const CampaignFormatService = {
     }
   },
 
+  /** A distance in the user's preferred unit, e.g. "5.2 km" or "3.2 mi". */
+  distance(km: number, unit: DistanceUnit): string {
+    return unit === 'mi'
+      ? `${trimNumber(km / KM_PER_MILE)} mi`
+      : `${trimNumber(km)} km`
+  },
+
   /** "4 Nov 2026" */
   shortDate(isoDate: string): string {
     return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString('en-GB', {

@@ -9,6 +9,7 @@ import { ChallengeCompleteCard } from '@/features/dashboard/components/Challenge
 import { MissedDayBanner } from '@/features/dashboard/components/MissedDayBanner'
 import { TodayWorkoutCard } from '@/features/dashboard/components/TodayWorkoutCard'
 import { TomorrowPreviewCard } from '@/features/dashboard/components/TomorrowPreviewCard'
+import { CurrentCauseCard } from '@/features/meaningful/components/CurrentCauseCard'
 
 export function DashboardPage() {
   const {
@@ -110,6 +111,10 @@ export function DashboardPage() {
           plan={view.tomorrowPlan}
           goalType={challenge.goalType}
         />
+      </FadeIn>
+
+      <FadeIn delay={0.15}>
+        <CurrentCauseCard />
       </FadeIn>
     </div>
   )

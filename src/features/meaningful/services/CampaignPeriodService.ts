@@ -47,6 +47,19 @@ export const CampaignPeriodService = {
     return 'active'
   },
 
+  /** Days left including today: the whole month before it starts, 0 once it has ended. */
+  daysRemaining(period: CampaignPeriod, todayIso: string): number {
+    const lastDay = Number(period.endDate.slice(8, 10))
+    switch (this.getPhase(period, todayIso)) {
+      case 'upcoming':
+        return lastDay
+      case 'ended':
+        return 0
+      case 'active':
+        return lastDay - Number(todayIso.slice(8, 10)) + 1
+    }
+  },
+
   contains(period: CampaignPeriod, localDate: string): boolean {
     return localDate >= period.startDate && localDate <= period.endDate
   },

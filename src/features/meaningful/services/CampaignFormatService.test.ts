@@ -107,6 +107,13 @@ describe('CampaignFormatService goals', () => {
   })
 })
 
+describe('CampaignFormatService.distance', () => {
+  it('uses the preferred unit', () => {
+    expect(CampaignFormatService.distance(5.25, 'km')).toBe('5.3 km')
+    expect(CampaignFormatService.distance(10, 'mi')).toBe('6.2 mi')
+  })
+})
+
 describe('CampaignFormatService periods', () => {
   it('labels periods and phases', () => {
     expect(

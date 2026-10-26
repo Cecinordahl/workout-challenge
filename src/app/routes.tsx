@@ -18,6 +18,8 @@ import { StravaCallbackPage } from '@/features/integrations/components/StravaCal
 import { AccountPage } from '@/features/authentication/components/AccountPage'
 import { MeaningfulPage } from '@/features/meaningful/components/MeaningfulPage'
 import { CampaignPage } from '@/features/meaningful/components/CampaignPage'
+import { CampaignProgressPage } from '@/features/meaningful/components/CampaignProgressPage'
+import { BadgeCollectionPage } from '@/features/meaningful/components/BadgeCollectionPage'
 
 export const router = createBrowserRouter([
   {
@@ -54,6 +56,11 @@ export const router = createBrowserRouter([
           { path: '/invite/:code', element: <JoinTeamPage /> },
           { path: '/causes', element: <MeaningfulPage /> },
           { path: '/causes/:slug', element: <CampaignPage /> },
+          {
+            path: '/causes/:slug/progress',
+            element: <CampaignProgressPage />,
+          },
+          { path: '/badges', element: <BadgeCollectionPage /> },
           { path: '/notifications', element: <NotificationsPage /> },
           { path: '/account', element: <AccountPage /> },
           { path: '/strava/callback', element: <StravaCallbackPage /> },

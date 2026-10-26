@@ -60,6 +60,20 @@ describe('CampaignPeriodService boundaries', () => {
   })
 })
 
+describe('CampaignPeriodService.daysRemaining', () => {
+  const november = CampaignPeriodService.getPeriod(11, 2026)
+
+  it('counts today as a remaining day', () => {
+    expect(CampaignPeriodService.daysRemaining(november, '2026-11-01')).toBe(30)
+    expect(CampaignPeriodService.daysRemaining(november, '2026-11-30')).toBe(1)
+  })
+
+  it('is the whole month before it starts and zero after it ends', () => {
+    expect(CampaignPeriodService.daysRemaining(november, '2026-10-26')).toBe(30)
+    expect(CampaignPeriodService.daysRemaining(november, '2026-12-01')).toBe(0)
+  })
+})
+
 describe('campaign phase across time zones', () => {
   afterEach(() => {
     vi.useRealTimers()
